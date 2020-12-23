@@ -1,0 +1,48 @@
+specVersion: 0.0.2
+schema:
+  file: schema.graphql
+dataSources:
+  - kind: ethereum/contract
+    name: Contract
+    network: mainnet
+    source:
+      address: "0x443D2f2755DB5942601fa062Cc248aAA153313D3"
+      abi: Contract
+      startBlock: 10722554
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.4
+      language: wasm/assemblyscript
+      entities:
+        - Advance
+        - CouponExpiration
+        - CouponPurchase
+        - CouponRedemption
+        - SupplyDecrease
+        - SupplyIncrease
+        - SupplyNeutral
+      abis:
+        - name: Contract
+          file: Contract/abis/Contract.json
+        - name: LPContract
+          file: Contract/abis/LPContract.json
+        - name: DollarContract
+          file: Contract/abis/DollarContract.json
+        - name: UniswapV2PairContract
+          file: Contract/abis/UniswapV2PairContract.json
+      eventHandlers:
+        - event: Advance(indexed uint256,uint256,uint256)
+          handler: handleAdvance
+        - event: CouponExpiration(indexed uint256,uint256,uint256,uint256,uint256)
+          handler: handleCouponExpiration
+        - event: CouponPurchase(indexed address,indexed uint256,uint256,uint256)
+          handler: handleCouponPurchase
+        - event: CouponRedemption(indexed address,indexed uint256,uint256)
+          handler: handleCouponRedemption
+        - event: SupplyDecrease(indexed uint256,uint256,uint256)
+          handler: handleSupplyDecrease
+        - event: SupplyIncrease(indexed uint256,uint256,uint256,uint256,uint256)
+          handler: handleSupplyIncrease
+        - event: SupplyNeutral(indexed uint256)
+          handler: handleSupplyNeutral
+      file: Contract/Contract.wasm
