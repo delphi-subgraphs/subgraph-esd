@@ -4,10 +4,10 @@
   "scripts": {
     "codegen": "graph codegen",
     "build": "graph build",
-    "deploy": "graph deploy --node https://api.thegraph.com/deploy/ --ipfs https://api.thegraph.com/ipfs/ elfedy/yaesg",
-    "create-local": "graph create --node http://localhost:8020/ elfedy/yaesg",
-    "remove-local": "graph remove --node http://localhost:8020/ elfedy/yaesg",
-    "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 elfedy/yaesg"
+    "deploy": "graph deploy --node https://api.thegraph.com/deploy/ --ipfs https://api.thegraph.com/ipfs/ froid1911/empty-set-dollar",
+    "create-local": "graph create --node http://localhost:8020/ elfedy/esd-beta",
+    "remove-local": "graph remove --node http://localhost:8020/ elfedy/esd-beta",
+    "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://ipfs.network.thegraph.com elfedy/esd-beta"
   },
   "dependencies": {
     "@graphprotocol/graph-cli": "0.18.0",

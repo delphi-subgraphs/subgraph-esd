@@ -1,4 +1,6 @@
 specVersion: 0.0.2
+description: ESD Subgraph
+repository: https://github.com/delphi-subgraphs/subgraph-esd
 schema:
   file: ./schema.graphql
 dataSources:
