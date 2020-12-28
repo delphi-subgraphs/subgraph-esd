@@ -62,19 +62,16 @@ export function handleAdvance(event: Advance): void {
   let uniswapContract = UniswapV2PairContract.bind(UNISWAP_PAIR_CONTRACT_ADDRESS)
   let startTotalLPTokens = uniswapContract.totalSupply()
 
-  if(!startTotalLPTokens.isZero()) {
-    epoch.startLPTotalBondedESD = startLPTotalBondedTokens / startTotalLPTokens * startTotalLPESD
+  if(startTotalLPTokens > BigInt.fromI32(0)) {
+    epoch.startLPTotalBondedESD = (startLPTotalBondedTokens * startTotalLPESD) / startTotalLPTokens
+    epoch.startLPTotalStagedESD = (startLPTotalStagedTokens * startTotalLPESD) / startTotalLPTokens
 
-     epoch.startLPTotalStagedESD = startLPTotalStagedTokens / startTotalLPTokens * startTotalLPESD
-  } else {
-    epoch.startLPTotalBondedESD = BigInt.fromI32(0)
-    epoch.startLPTotalStagedESD = BigInt.fromI32(0)
   }
 
   epoch.startLPTotalStagedTokens = startLPTotalStagedTokens
   epoch.startLPTotalBondedTokens = startLPTotalBondedTokens
   epoch.startTotalLPTokens = startTotalLPTokens
-  epoch.startTotalLPESD = startTotalLPTokens
+  epoch.startTotalLPESD = startTotalLPESD
 
   epoch.save()
 }
