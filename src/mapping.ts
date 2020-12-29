@@ -18,7 +18,7 @@ import {
 import {
   UniswapV2PairContract,
 } from "../generated/Contract/UniswapV2PairContract"
-import { Epoch, LpTokenHistory } from "../generated/schema"
+import { Epoch, LpTokenHistory, EsdSupplyHistory } from "../generated/schema"
 
 // epochs needed to expire the coupons
 let COUPON_EXPIRATION = BigInt.fromI32(90)
@@ -28,6 +28,9 @@ let UNISWAP_PAIR_CONTRACT_ADDRESS = Address.fromString('0x88ff79eb2bc5850f273154
 
 // Dollar ERC20 Contract
 let DOLLAR_CONTRACT_ADDRESS = Address.fromString('36F3FD68E7325a35EB768F1AedaAe9EA0689d723')
+
+// Dollar DAO Contract
+let DOLLAR_DAO_CONTRACT = Address.fromString('443D2f2755DB5942601fa062Cc248aAA153313D3');
 
 export function handleAdvance(event: Advance): void {
   let epochId = event.params.epoch.toString()
@@ -58,6 +61,8 @@ export function handleAdvance(event: Advance): void {
 
   let dollarContract = DollarContract.bind(DOLLAR_CONTRACT_ADDRESS)
   let startTotalLPESD = dollarContract.balanceOf(UNISWAP_PAIR_CONTRACT_ADDRESS)
+  let totalSupplyESD = dollarContract.totalSupply()
+  let startTotalDAOESD = dollarContract.balanceOf(DOLLAR_DAO_CONTRACT);
 
   let uniswapContract = UniswapV2PairContract.bind(UNISWAP_PAIR_CONTRACT_ADDRESS)
   let startTotalLPTokens = uniswapContract.totalSupply()
@@ -81,6 +86,14 @@ export function handleAdvance(event: Advance): void {
   tokenhistory.totalBonded = startLPTotalBondedTokens
   tokenhistory.totalSupply = startTotalLPTokens
   tokenhistory.save()
+
+  let esdSupplyHistory = new EsdSupplyHistory(event.params.epoch.toString())
+  esdSupplyHistory.epoch = event.params.epoch
+  esdSupplyHistory.id = event.params.epoch.toString()
+  esdSupplyHistory.totalSupply = totalSupplyESD
+  esdSupplyHistory.lockedViaLP = startTotalLPESD
+  esdSupplyHistory.lockedViaDAO = startTotalDAOESD
+  esdSupplyHistory.save()
 }
 
 export function handleCouponExpiration(event: CouponExpiration): void {

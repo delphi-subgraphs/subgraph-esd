@@ -35,3 +35,11 @@ type LpTokenHistory @entity {
   totalBonded: BigInt
   totalSupply: BigInt
 }
+
+type EsdSupplyHistory @entity {
+  id: ID!
+  epoch: BigInt
+  lockedViaDAO: BigInt
+  lockedViaLP: BigInt
+  totalSupply: BigInt
+}

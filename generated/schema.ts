@@ -473,3 +473,102 @@ export class LpTokenHistory extends Entity {
     }
   }
 }
+
+export class EsdSupplyHistory extends Entity {
+  constructor(id: string) {
+    super();
+    this.set("id", Value.fromString(id));
+  }
+
+  save(): void {
+    let id = this.get("id");
+    assert(id !== null, "Cannot save EsdSupplyHistory entity without an ID");
+    assert(
+      id.kind == ValueKind.STRING,
+      "Cannot save EsdSupplyHistory entity with non-string ID. " +
+        'Considering using .toHex() to convert the "id" to a string.'
+    );
+    store.set("EsdSupplyHistory", id.toString(), this);
+  }
+
+  static load(id: string): EsdSupplyHistory | null {
+    return store.get("EsdSupplyHistory", id) as EsdSupplyHistory | null;
+  }
+
+  get id(): string {
+    let value = this.get("id");
+    return value.toString();
+  }
+
+  set id(value: string) {
+    this.set("id", Value.fromString(value));
+  }
+
+  get epoch(): BigInt | null {
+    let value = this.get("epoch");
+    if (value === null || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toBigInt();
+    }
+  }
+
+  set epoch(value: BigInt | null) {
+    if (value === null) {
+      this.unset("epoch");
+    } else {
+      this.set("epoch", Value.fromBigInt(value as BigInt));
+    }
+  }
+
+  get lockedViaDAO(): BigInt | null {
+    let value = this.get("lockedViaDAO");
+    if (value === null || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toBigInt();
+    }
+  }
+
+  set lockedViaDAO(value: BigInt | null) {
+    if (value === null) {
+      this.unset("lockedViaDAO");
+    } else {
+      this.set("lockedViaDAO", Value.fromBigInt(value as BigInt));
+    }
+  }
+
+  get lockedViaLP(): BigInt | null {
+    let value = this.get("lockedViaLP");
+    if (value === null || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toBigInt();
+    }
+  }
+
+  set lockedViaLP(value: BigInt | null) {
+    if (value === null) {
+      this.unset("lockedViaLP");
+    } else {
+      this.set("lockedViaLP", Value.fromBigInt(value as BigInt));
+    }
+  }
+
+  get totalSupply(): BigInt | null {
+    let value = this.get("totalSupply");
+    if (value === null || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toBigInt();
+    }
+  }
+
+  set totalSupply(value: BigInt | null) {
+    if (value === null) {
+      this.unset("totalSupply");
+    } else {
+      this.set("totalSupply", Value.fromBigInt(value as BigInt));
+    }
+  }
+}
