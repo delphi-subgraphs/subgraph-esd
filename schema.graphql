@@ -43,3 +43,40 @@ type EsdSupplyHistory @entity {
   lockedViaLP: BigInt
   totalSupply: BigInt
 }
+
+type BalanceStats @entity {
+  id: ID!
+  total: BigInt
+  frozen: BigInt
+  fluid: BigInt
+  locked: BigInt
+}
+
+type DAOBalance @entity {
+  id: ID!
+  bonded: BalanceStats
+  staged: BalanceStats
+}
+
+type LPBalance @entity {
+  id: ID!
+  bonded: BalanceStats
+  staged: BalanceStats
+  reward: BalanceStats
+  claimable: BigInt
+}
+
+type EpochSnapshots @entity {
+  id: ID!
+  epoch: BigInt
+  timestamp: BigInt
+  dao: DAOBalance
+  lp: LPBalance
+}
+
+type FutureClaimableESD @entity {
+  id: ID!
+  epoch: BigInt
+  daoClaimable: BigInt
+  lpClaimable: BigInt
+}

@@ -572,3 +572,447 @@ export class EsdSupplyHistory extends Entity {
     }
   }
 }
+
+export class BalanceStats extends Entity {
+  constructor(id: string) {
+    super();
+    this.set("id", Value.fromString(id));
+  }
+
+  save(): void {
+    let id = this.get("id");
+    assert(id !== null, "Cannot save BalanceStats entity without an ID");
+    assert(
+      id.kind == ValueKind.STRING,
+      "Cannot save BalanceStats entity with non-string ID. " +
+        'Considering using .toHex() to convert the "id" to a string.'
+    );
+    store.set("BalanceStats", id.toString(), this);
+  }
+
+  static load(id: string): BalanceStats | null {
+    return store.get("BalanceStats", id) as BalanceStats | null;
+  }
+
+  get id(): string {
+    let value = this.get("id");
+    return value.toString();
+  }
+
+  set id(value: string) {
+    this.set("id", Value.fromString(value));
+  }
+
+  get total(): BigInt | null {
+    let value = this.get("total");
+    if (value === null || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toBigInt();
+    }
+  }
+
+  set total(value: BigInt | null) {
+    if (value === null) {
+      this.unset("total");
+    } else {
+      this.set("total", Value.fromBigInt(value as BigInt));
+    }
+  }
+
+  get frozen(): BigInt | null {
+    let value = this.get("frozen");
+    if (value === null || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toBigInt();
+    }
+  }
+
+  set frozen(value: BigInt | null) {
+    if (value === null) {
+      this.unset("frozen");
+    } else {
+      this.set("frozen", Value.fromBigInt(value as BigInt));
+    }
+  }
+
+  get fluid(): BigInt | null {
+    let value = this.get("fluid");
+    if (value === null || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toBigInt();
+    }
+  }
+
+  set fluid(value: BigInt | null) {
+    if (value === null) {
+      this.unset("fluid");
+    } else {
+      this.set("fluid", Value.fromBigInt(value as BigInt));
+    }
+  }
+
+  get locked(): BigInt | null {
+    let value = this.get("locked");
+    if (value === null || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toBigInt();
+    }
+  }
+
+  set locked(value: BigInt | null) {
+    if (value === null) {
+      this.unset("locked");
+    } else {
+      this.set("locked", Value.fromBigInt(value as BigInt));
+    }
+  }
+}
+
+export class DAOBalance extends Entity {
+  constructor(id: string) {
+    super();
+    this.set("id", Value.fromString(id));
+  }
+
+  save(): void {
+    let id = this.get("id");
+    assert(id !== null, "Cannot save DAOBalance entity without an ID");
+    assert(
+      id.kind == ValueKind.STRING,
+      "Cannot save DAOBalance entity with non-string ID. " +
+        'Considering using .toHex() to convert the "id" to a string.'
+    );
+    store.set("DAOBalance", id.toString(), this);
+  }
+
+  static load(id: string): DAOBalance | null {
+    return store.get("DAOBalance", id) as DAOBalance | null;
+  }
+
+  get id(): string {
+    let value = this.get("id");
+    return value.toString();
+  }
+
+  set id(value: string) {
+    this.set("id", Value.fromString(value));
+  }
+
+  get bonded(): string | null {
+    let value = this.get("bonded");
+    if (value === null || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toString();
+    }
+  }
+
+  set bonded(value: string | null) {
+    if (value === null) {
+      this.unset("bonded");
+    } else {
+      this.set("bonded", Value.fromString(value as string));
+    }
+  }
+
+  get staged(): string | null {
+    let value = this.get("staged");
+    if (value === null || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toString();
+    }
+  }
+
+  set staged(value: string | null) {
+    if (value === null) {
+      this.unset("staged");
+    } else {
+      this.set("staged", Value.fromString(value as string));
+    }
+  }
+}
+
+export class LPBalance extends Entity {
+  constructor(id: string) {
+    super();
+    this.set("id", Value.fromString(id));
+  }
+
+  save(): void {
+    let id = this.get("id");
+    assert(id !== null, "Cannot save LPBalance entity without an ID");
+    assert(
+      id.kind == ValueKind.STRING,
+      "Cannot save LPBalance entity with non-string ID. " +
+        'Considering using .toHex() to convert the "id" to a string.'
+    );
+    store.set("LPBalance", id.toString(), this);
+  }
+
+  static load(id: string): LPBalance | null {
+    return store.get("LPBalance", id) as LPBalance | null;
+  }
+
+  get id(): string {
+    let value = this.get("id");
+    return value.toString();
+  }
+
+  set id(value: string) {
+    this.set("id", Value.fromString(value));
+  }
+
+  get bonded(): string | null {
+    let value = this.get("bonded");
+    if (value === null || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toString();
+    }
+  }
+
+  set bonded(value: string | null) {
+    if (value === null) {
+      this.unset("bonded");
+    } else {
+      this.set("bonded", Value.fromString(value as string));
+    }
+  }
+
+  get staged(): string | null {
+    let value = this.get("staged");
+    if (value === null || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toString();
+    }
+  }
+
+  set staged(value: string | null) {
+    if (value === null) {
+      this.unset("staged");
+    } else {
+      this.set("staged", Value.fromString(value as string));
+    }
+  }
+
+  get reward(): string | null {
+    let value = this.get("reward");
+    if (value === null || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toString();
+    }
+  }
+
+  set reward(value: string | null) {
+    if (value === null) {
+      this.unset("reward");
+    } else {
+      this.set("reward", Value.fromString(value as string));
+    }
+  }
+
+  get claimable(): BigInt | null {
+    let value = this.get("claimable");
+    if (value === null || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toBigInt();
+    }
+  }
+
+  set claimable(value: BigInt | null) {
+    if (value === null) {
+      this.unset("claimable");
+    } else {
+      this.set("claimable", Value.fromBigInt(value as BigInt));
+    }
+  }
+}
+
+export class EpochSnapshots extends Entity {
+  constructor(id: string) {
+    super();
+    this.set("id", Value.fromString(id));
+  }
+
+  save(): void {
+    let id = this.get("id");
+    assert(id !== null, "Cannot save EpochSnapshots entity without an ID");
+    assert(
+      id.kind == ValueKind.STRING,
+      "Cannot save EpochSnapshots entity with non-string ID. " +
+        'Considering using .toHex() to convert the "id" to a string.'
+    );
+    store.set("EpochSnapshots", id.toString(), this);
+  }
+
+  static load(id: string): EpochSnapshots | null {
+    return store.get("EpochSnapshots", id) as EpochSnapshots | null;
+  }
+
+  get id(): string {
+    let value = this.get("id");
+    return value.toString();
+  }
+
+  set id(value: string) {
+    this.set("id", Value.fromString(value));
+  }
+
+  get epoch(): BigInt | null {
+    let value = this.get("epoch");
+    if (value === null || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toBigInt();
+    }
+  }
+
+  set epoch(value: BigInt | null) {
+    if (value === null) {
+      this.unset("epoch");
+    } else {
+      this.set("epoch", Value.fromBigInt(value as BigInt));
+    }
+  }
+
+  get timestamp(): BigInt | null {
+    let value = this.get("timestamp");
+    if (value === null || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toBigInt();
+    }
+  }
+
+  set timestamp(value: BigInt | null) {
+    if (value === null) {
+      this.unset("timestamp");
+    } else {
+      this.set("timestamp", Value.fromBigInt(value as BigInt));
+    }
+  }
+
+  get dao(): string | null {
+    let value = this.get("dao");
+    if (value === null || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toString();
+    }
+  }
+
+  set dao(value: string | null) {
+    if (value === null) {
+      this.unset("dao");
+    } else {
+      this.set("dao", Value.fromString(value as string));
+    }
+  }
+
+  get lp(): string | null {
+    let value = this.get("lp");
+    if (value === null || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toString();
+    }
+  }
+
+  set lp(value: string | null) {
+    if (value === null) {
+      this.unset("lp");
+    } else {
+      this.set("lp", Value.fromString(value as string));
+    }
+  }
+}
+
+export class FutureClaimableESD extends Entity {
+  constructor(id: string) {
+    super();
+    this.set("id", Value.fromString(id));
+  }
+
+  save(): void {
+    let id = this.get("id");
+    assert(id !== null, "Cannot save FutureClaimableESD entity without an ID");
+    assert(
+      id.kind == ValueKind.STRING,
+      "Cannot save FutureClaimableESD entity with non-string ID. " +
+        'Considering using .toHex() to convert the "id" to a string.'
+    );
+    store.set("FutureClaimableESD", id.toString(), this);
+  }
+
+  static load(id: string): FutureClaimableESD | null {
+    return store.get("FutureClaimableESD", id) as FutureClaimableESD | null;
+  }
+
+  get id(): string {
+    let value = this.get("id");
+    return value.toString();
+  }
+
+  set id(value: string) {
+    this.set("id", Value.fromString(value));
+  }
+
+  get epoch(): BigInt | null {
+    let value = this.get("epoch");
+    if (value === null || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toBigInt();
+    }
+  }
+
+  set epoch(value: BigInt | null) {
+    if (value === null) {
+      this.unset("epoch");
+    } else {
+      this.set("epoch", Value.fromBigInt(value as BigInt));
+    }
+  }
+
+  get daoClaimable(): BigInt | null {
+    let value = this.get("daoClaimable");
+    if (value === null || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toBigInt();
+    }
+  }
+
+  set daoClaimable(value: BigInt | null) {
+    if (value === null) {
+      this.unset("daoClaimable");
+    } else {
+      this.set("daoClaimable", Value.fromBigInt(value as BigInt));
+    }
+  }
+
+  get lpClaimable(): BigInt | null {
+    let value = this.get("lpClaimable");
+    if (value === null || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toBigInt();
+    }
+  }
+
+  set lpClaimable(value: BigInt | null) {
+    if (value === null) {
+      this.unset("lpClaimable");
+    } else {
+      this.set("lpClaimable", Value.fromBigInt(value as BigInt));
+    }
+  }
+}
