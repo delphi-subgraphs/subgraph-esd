@@ -44,7 +44,7 @@ export class Epoch extends Entity {
 
   get startDAOTotalBonded(): BigInt | null {
     let value = this.get("startDAOTotalBonded");
-    if (value === null) {
+    if (value === null || value.kind == ValueKind.NULL) {
       return null;
     } else {
       return value.toBigInt();
@@ -61,7 +61,7 @@ export class Epoch extends Entity {
 
   get startDAOTotalStaged(): BigInt | null {
     let value = this.get("startDAOTotalStaged");
-    if (value === null) {
+    if (value === null || value.kind == ValueKind.NULL) {
       return null;
     } else {
       return value.toBigInt();
@@ -78,7 +78,7 @@ export class Epoch extends Entity {
 
   get startTotalDebt(): BigInt | null {
     let value = this.get("startTotalDebt");
-    if (value === null) {
+    if (value === null || value.kind == ValueKind.NULL) {
       return null;
     } else {
       return value.toBigInt();
@@ -95,7 +95,7 @@ export class Epoch extends Entity {
 
   get startTotalRedeemable(): BigInt | null {
     let value = this.get("startTotalRedeemable");
-    if (value === null) {
+    if (value === null || value.kind == ValueKind.NULL) {
       return null;
     } else {
       return value.toBigInt();
@@ -112,7 +112,7 @@ export class Epoch extends Entity {
 
   get startTotalCoupons(): BigInt | null {
     let value = this.get("startTotalCoupons");
-    if (value === null) {
+    if (value === null || value.kind == ValueKind.NULL) {
       return null;
     } else {
       return value.toBigInt();
@@ -129,7 +129,7 @@ export class Epoch extends Entity {
 
   get startTotalNet(): BigInt | null {
     let value = this.get("startTotalNet");
-    if (value === null) {
+    if (value === null || value.kind == ValueKind.NULL) {
       return null;
     } else {
       return value.toBigInt();
@@ -146,7 +146,7 @@ export class Epoch extends Entity {
 
   get startTotalLPESD(): BigInt | null {
     let value = this.get("startTotalLPESD");
-    if (value === null) {
+    if (value === null || value.kind == ValueKind.NULL) {
       return null;
     } else {
       return value.toBigInt();
@@ -163,7 +163,7 @@ export class Epoch extends Entity {
 
   get startTotalLPTokens(): BigInt | null {
     let value = this.get("startTotalLPTokens");
-    if (value === null) {
+    if (value === null || value.kind == ValueKind.NULL) {
       return null;
     } else {
       return value.toBigInt();
@@ -180,7 +180,7 @@ export class Epoch extends Entity {
 
   get startLPTotalBondedTokens(): BigInt | null {
     let value = this.get("startLPTotalBondedTokens");
-    if (value === null) {
+    if (value === null || value.kind == ValueKind.NULL) {
       return null;
     } else {
       return value.toBigInt();
@@ -197,7 +197,7 @@ export class Epoch extends Entity {
 
   get startLPTotalStagedTokens(): BigInt | null {
     let value = this.get("startLPTotalStagedTokens");
-    if (value === null) {
+    if (value === null || value.kind == ValueKind.NULL) {
       return null;
     } else {
       return value.toBigInt();
@@ -214,7 +214,7 @@ export class Epoch extends Entity {
 
   get startLPTotalBondedESD(): BigInt | null {
     let value = this.get("startLPTotalBondedESD");
-    if (value === null) {
+    if (value === null || value.kind == ValueKind.NULL) {
       return null;
     } else {
       return value.toBigInt();
@@ -231,7 +231,7 @@ export class Epoch extends Entity {
 
   get startLPTotalStagedESD(): BigInt | null {
     let value = this.get("startLPTotalStagedESD");
-    if (value === null) {
+    if (value === null || value.kind == ValueKind.NULL) {
       return null;
     } else {
       return value.toBigInt();
@@ -248,7 +248,7 @@ export class Epoch extends Entity {
 
   get startTimestamp(): BigInt | null {
     let value = this.get("startTimestamp");
-    if (value === null) {
+    if (value === null || value.kind == ValueKind.NULL) {
       return null;
     } else {
       return value.toBigInt();
@@ -265,7 +265,7 @@ export class Epoch extends Entity {
 
   get startBlock(): BigInt | null {
     let value = this.get("startBlock");
-    if (value === null) {
+    if (value === null || value.kind == ValueKind.NULL) {
       return null;
     } else {
       return value.toBigInt();
@@ -282,7 +282,7 @@ export class Epoch extends Entity {
 
   get expiredCoupons(): BigInt | null {
     let value = this.get("expiredCoupons");
-    if (value === null) {
+    if (value === null || value.kind == ValueKind.NULL) {
       return null;
     } else {
       return value.toBigInt();
@@ -299,7 +299,7 @@ export class Epoch extends Entity {
 
   get outstandingCoupons(): BigInt | null {
     let value = this.get("outstandingCoupons");
-    if (value === null) {
+    if (value === null || value.kind == ValueKind.NULL) {
       return null;
     } else {
       return value.toBigInt();
@@ -316,7 +316,7 @@ export class Epoch extends Entity {
 
   get couponsExpiration(): BigInt | null {
     let value = this.get("couponsExpiration");
-    if (value === null) {
+    if (value === null || value.kind == ValueKind.NULL) {
       return null;
     } else {
       return value.toBigInt();
@@ -333,7 +333,7 @@ export class Epoch extends Entity {
 
   get oraclePrice(): BigInt | null {
     let value = this.get("oraclePrice");
-    if (value === null) {
+    if (value === null || value.kind == ValueKind.NULL) {
       return null;
     } else {
       return value.toBigInt();
@@ -350,7 +350,7 @@ export class Epoch extends Entity {
 
   get deltaSupply(): BigInt | null {
     let value = this.get("deltaSupply");
-    if (value === null) {
+    if (value === null || value.kind == ValueKind.NULL) {
       return null;
     } else {
       return value.toBigInt();
@@ -372,5 +372,104 @@ export class Epoch extends Entity {
 
   set bootstrappingAt(value: boolean) {
     this.set("bootstrappingAt", Value.fromBoolean(value));
+  }
+}
+
+export class LpTokenHistory extends Entity {
+  constructor(id: string) {
+    super();
+    this.set("id", Value.fromString(id));
+  }
+
+  save(): void {
+    let id = this.get("id");
+    assert(id !== null, "Cannot save LpTokenHistory entity without an ID");
+    assert(
+      id.kind == ValueKind.STRING,
+      "Cannot save LpTokenHistory entity with non-string ID. " +
+        'Considering using .toHex() to convert the "id" to a string.'
+    );
+    store.set("LpTokenHistory", id.toString(), this);
+  }
+
+  static load(id: string): LpTokenHistory | null {
+    return store.get("LpTokenHistory", id) as LpTokenHistory | null;
+  }
+
+  get id(): string {
+    let value = this.get("id");
+    return value.toString();
+  }
+
+  set id(value: string) {
+    this.set("id", Value.fromString(value));
+  }
+
+  get epoch(): BigInt | null {
+    let value = this.get("epoch");
+    if (value === null || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toBigInt();
+    }
+  }
+
+  set epoch(value: BigInt | null) {
+    if (value === null) {
+      this.unset("epoch");
+    } else {
+      this.set("epoch", Value.fromBigInt(value as BigInt));
+    }
+  }
+
+  get totalStaged(): BigInt | null {
+    let value = this.get("totalStaged");
+    if (value === null || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toBigInt();
+    }
+  }
+
+  set totalStaged(value: BigInt | null) {
+    if (value === null) {
+      this.unset("totalStaged");
+    } else {
+      this.set("totalStaged", Value.fromBigInt(value as BigInt));
+    }
+  }
+
+  get totalBonded(): BigInt | null {
+    let value = this.get("totalBonded");
+    if (value === null || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toBigInt();
+    }
+  }
+
+  set totalBonded(value: BigInt | null) {
+    if (value === null) {
+      this.unset("totalBonded");
+    } else {
+      this.set("totalBonded", Value.fromBigInt(value as BigInt));
+    }
+  }
+
+  get totalSupply(): BigInt | null {
+    let value = this.get("totalSupply");
+    if (value === null || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toBigInt();
+    }
+  }
+
+  set totalSupply(value: BigInt | null) {
+    if (value === null) {
+      this.unset("totalSupply");
+    } else {
+      this.set("totalSupply", Value.fromBigInt(value as BigInt));
+    }
   }
 }

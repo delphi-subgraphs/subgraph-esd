@@ -27,3 +27,11 @@ type Epoch @entity {
 
   bootstrappingAt: Boolean
 }
+
+type LpTokenHistory @entity {
+  id: ID!
+  epoch: BigInt
+  totalStaged: BigInt
+  totalBonded: BigInt
+  totalSupply: BigInt
+}

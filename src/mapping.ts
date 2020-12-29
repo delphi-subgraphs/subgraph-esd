@@ -18,7 +18,7 @@ import {
 import {
   UniswapV2PairContract,
 } from "../generated/Contract/UniswapV2PairContract"
-import { Epoch } from "../generated/schema"
+import { Epoch, LpTokenHistory } from "../generated/schema"
 
 // epochs needed to expire the coupons
 let COUPON_EXPIRATION = BigInt.fromI32(90)
@@ -72,8 +72,15 @@ export function handleAdvance(event: Advance): void {
   epoch.startLPTotalBondedTokens = startLPTotalBondedTokens
   epoch.startTotalLPTokens = startTotalLPTokens
   epoch.startTotalLPESD = startTotalLPESD
-
   epoch.save()
+
+  let tokenhistory = new LpTokenHistory(event.params.epoch.toString())
+  tokenhistory.epoch = event.params.epoch
+  tokenhistory.id = event.params.epoch.toString()
+  tokenhistory.totalStaged = startLPTotalStagedTokens
+  tokenhistory.totalBonded = startLPTotalBondedTokens
+  tokenhistory.totalSupply = startTotalLPTokens
+  tokenhistory.save()
 }
 
 export function handleCouponExpiration(event: CouponExpiration): void {
