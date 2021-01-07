@@ -103,58 +103,23 @@ export function handleAdvance(event: Advance): void {
     esdSupplyHistory.lockedViaDAO = startTotalDAOESD
     esdSupplyHistory.save()
   }
-  
-
-  // let lpBondedStats = new BalanceStats(`lp-${epochId}-bonded`);
-  // lpBondedStats.id = `lp-${epochId}-bonded`
-  // lpBondedStats.total = contract.totalBonded();
-  // lpBondedStats.frozen = contract.totalBonded();
-  // lpBondedStats.fluid = contract.totalBonded();
-  // lpBondedStats.locked = contract.totalBonded();
-  // lpBondedStats.save();
-
-  // let lpStagedstats = new BalanceStats(`lp-${epochId}-staged`);
-  // lpStagedstats.id = `lp-${epochId}-staged`;
-  // lpStagedstats.total = contract.totalStaged();
-  // lpStagedstats.frozen = contract.totalStaged();
-  // lpStagedstats.fluid = contract.totalStaged();
-  // lpStagedstats.locked = contract.totalStaged();
-  // lpStagedstats.save(); 
-
-  // let lpRewardstats = new BalanceStats(`lp-${epochId}-reward`);
-  // lpRewardstats.id = `lp-${epochId}-reward`
-  // lpRewardstats.total = contract.totalStaged();
-  // lpRewardstats.frozen = contract.totalStaged();
-  // lpRewardstats.fluid = contract.totalStaged();
-  // lpRewardstats.locked = contract.totalStaged();
-  // lpRewardstats.save(); 
 
   // load previous stats / if epoch == 1 set everything to zero
   log.warning("Handle Advance with Epoch {}", [epochId]);
 
+  // Init Stats for new Epoch
   let bonded = initStats(event.params.epoch, "bonded");
-  let staged = initStats(event.params.epoch, "staged");
-
-  // @TODO Move Staged to Bonded
-
   bonded.save();
+
+  let staged = initStats(event.params.epoch, "staged");
   staged.save();
 
-
-
+  // Create Datamodell based on Schema
   let daoBalance = new DAOBalance(epochId);
   daoBalance.id = epochId;
   daoBalance.bonded = "dao-" + epochId + "-bonded";
   daoBalance.staged = "dao-" + epochId + "-staged";
   daoBalance.save();
-
-  let lpBalance = new LPBalance(epochId);
-  lpBalance.id = epochId
-  lpBalance.bonded = "lp-" + epochId + "-bonded";
-  lpBalance.staged = "lp-" + epochId + "-staged";
-  lpBalance.reward = "lp-" + epochId + "-reward";
-  lpBalance.claimable = contract.totalRedeemable(); // @TODO: Set Proper value
-  lpBalance.save();
 
   // init epoch new snapshot
   let epochSnapShots = new EpochSnapshot(epochId);
@@ -162,7 +127,6 @@ export function handleAdvance(event: Advance): void {
   epochSnapShots.epoch = event.params.epoch;
   epochSnapShots.timestamp = event.params.timestamp;
   epochSnapShots.dao = epochId;
-  // epochSnapShots.lp = epochId;
   epochSnapShots.save();
 }
 
@@ -225,8 +189,9 @@ export function handleSupplyNeutral(event: SupplyNeutral): void {
 export function initStats(epoch: BigInt, event: string): BalanceStats {
   let stats = new BalanceStats("dao-" +epoch.toString() + "-" + event);
   log.warning("Init Stats for EPOCH {} {}", [epoch.toString(), event])
+  
+  // Start with 0 on First Epoch
   if(epoch.toString() == "1") {
-    log.warning("test inner",[]);
     stats.total = BigInt.fromI32(0);
     stats.frozen = BigInt.fromI32(0);
     stats.fluid = BigInt.fromI32(0);
@@ -234,9 +199,7 @@ export function initStats(epoch: BigInt, event: string): BalanceStats {
     return stats;
   }
 
-  // if bonded
-
-  // @TODO load previous stats
+  // move Fluid to Frozen on new Epoch
   let previousStats = BalanceStats.load("dao-" +epoch.minus(BigInt.fromI32(1)).toString() + "-" + event);
   stats.total = previousStats.total
   stats.frozen = previousStats.frozen.plus(previousStats.fluid);
@@ -256,12 +219,9 @@ export function handleDeposit(event: Deposit): void {
   log.warning("Handle deposit of {} with {} Tokens at epoch {}", [event.params.account.toHexString(), event.params.value.toString(), epoch.toString()]);
   
   let balanceStaged = BalanceStats.load("dao-" + epoch.toString() + "-staged");
-  
-  log.warning("Staged Stats: {} total, {} frozen, {} fluid",[balanceStaged.total.toString(), balanceStaged.frozen.toString(), balanceStaged.fluid.toString()]);
   balanceStaged.frozen = balanceStaged.frozen.plus(event.params.value);
   balanceStaged.total =  contract.totalStaged()
   balanceStaged.save();
-  log.warning("Staged Stats: {} total, {} frozen, {} fluid",[balanceStaged.total.toString(), balanceStaged.frozen.toString(), balanceStaged.fluid.toString()]);
 }
 
 /**
@@ -273,7 +233,6 @@ export function handleWithdraw(event: Withdraw): void {
 
   log.warning("Handle Withdraw of {} with {} Tokens at epoch {}", [event.params.account.toHexString(), event.params.value.toString(), epoch.toString()]);
   let balanceStaged = BalanceStats.load("dao-" + epoch.toString() + "-staged");
-
   balanceStaged.frozen = balanceStaged.frozen.minus(event.params.value);
   balanceStaged.total = contract.totalStaged()
   balanceStaged.save();
@@ -291,23 +250,18 @@ export function handleBond(event: Bond): void {
   let epoch = contract.epoch()
 
   log.warning("Handle bond of {} with {} Tokens at epoch {}", [event.params.account.toHexString(), event.params.valueUnderlying.toString(), epoch.toString()]);
-  let balanceBonded = BalanceStats.load("dao-" + epoch.toString() + "-bonded");
-  log.warning("Bonded Stats: {} total, {} frozen, {} fluid",[balanceBonded.total.toString(), balanceBonded.frozen.toString(), balanceBonded.fluid.toString()]);
-
+  
   // incrementTotalBonded(value);
+  let balanceBonded = BalanceStats.load("dao-" + epoch.toString() + "-bonded");
   balanceBonded.fluid = balanceBonded.fluid.plus(event.params.valueUnderlying);
   balanceBonded.total = contract.totalBonded()
   balanceBonded.save();
-  log.warning("Bonded Stats: {} total, {} frozen, {} fluid",[balanceBonded.total.toString(), balanceBonded.frozen.toString(), balanceBonded.fluid.toString()]);
 
-  let balanceStaged = BalanceStats.load("dao-" + epoch.toString() + "-staged");
-  log.warning("Staged Stats: {} total, {} frozen, {} fluid",[balanceStaged.total.toString(), balanceStaged.frozen.toString(), balanceStaged.fluid.toString()]);
-  
   // decrementBalanceOfStaged(msg.sender, value, "Bonding: insufficient staged balance");
+  let balanceStaged = BalanceStats.load("dao-" + epoch.toString() + "-staged");
   balanceStaged.frozen = balanceStaged.frozen.minus(event.params.valueUnderlying);
   balanceStaged.total = contract.totalStaged()
   balanceStaged.save();
-  log.warning("Staged Stats: {} total, {} frozen, {} fluid",[balanceStaged.total.toString(), balanceStaged.frozen.toString(), balanceStaged.fluid.toString()]);
 }
 
 /**
@@ -320,22 +274,18 @@ export function handleUnbond(event: Unbond): void {
   let epoch = contract.epoch()
 
   log.warning("Handle bond of {} with {} Tokens at epoch {}", [event.params.account.toHexString(), event.params.valueUnderlying.toString(), epoch.toString()]);
-  let balanceBonded = BalanceStats.load("dao-" + epoch.toString() + "-bonded");
-  log.warning("Bonded Stats: {} total, {} frozen, {} fluid",[balanceBonded.total.toString(), balanceBonded.frozen.toString(), balanceBonded.fluid.toString()]);
-
+  
   // decrementTotalBonded(staged, "Bonding: insufficient total bonded");
+  let balanceBonded = BalanceStats.load("dao-" + epoch.toString() + "-bonded");
   balanceBonded.frozen = balanceBonded.frozen.minus(event.params.valueUnderlying);
   balanceBonded.total = contract.totalBonded()
   balanceBonded.save();
-  log.warning("Bonded Stats: {} total, {} frozen, {} fluid",[balanceBonded.total.toString(), balanceBonded.frozen.toString(), balanceBonded.fluid.toString()]);
 
-  let balanceStaged = BalanceStats.load("dao-" + epoch.toString() + "-staged");
-  log.warning("Staged Stats: {} total, {} frozen, {} fluid",[balanceStaged.total.toString(), balanceStaged.frozen.toString(), balanceStaged.fluid.toString()]);
   // incrementBalanceOfStaged(msg.sender, staged);
+  let balanceStaged = BalanceStats.load("dao-" + epoch.toString() + "-staged");
   balanceStaged.fluid = balanceStaged.fluid.plus(event.params.valueUnderlying);
   balanceStaged.total = contract.totalStaged()
   balanceStaged.save();
-  log.warning("Staged Stats: {} total, {} frozen, {} fluid",[balanceStaged.total.toString(), balanceStaged.frozen.toString(), balanceStaged.fluid.toString()]);
 }
 
 /**
