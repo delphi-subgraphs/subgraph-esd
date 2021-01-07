@@ -30,7 +30,7 @@ type Epoch @entity {
 
 type LpTokenHistory @entity {
   id: ID!
-  epoch: BigInt
+  epoch: Epoch
   totalStaged: BigInt
   totalBonded: BigInt
   totalSupply: BigInt
@@ -38,7 +38,7 @@ type LpTokenHistory @entity {
 
 type EsdSupplyHistory @entity {
   id: ID!
-  epoch: BigInt
+  epoch: Epoch
   lockedViaDAO: BigInt
   lockedViaLP: BigInt
   totalSupply: BigInt
@@ -46,10 +46,10 @@ type EsdSupplyHistory @entity {
 
 type BalanceStats @entity {
   id: ID!
-  total: BigInt
-  frozen: BigInt
-  fluid: BigInt
-  locked: BigInt
+  total: BigInt!
+  frozen: BigInt!
+  fluid: BigInt!
+  locked: BigInt!
 }
 
 type DAOBalance @entity {
@@ -66,7 +66,7 @@ type LPBalance @entity {
   claimable: BigInt
 }
 
-type EpochSnapshots @entity {
+type EpochSnapshot @entity {
   id: ID!
   epoch: BigInt
   timestamp: BigInt
@@ -76,7 +76,7 @@ type EpochSnapshots @entity {
 
 type FutureClaimableESD @entity {
   id: ID!
-  epoch: BigInt
+  epoch: Epoch
   daoClaimable: BigInt
   lpClaimable: BigInt
 }

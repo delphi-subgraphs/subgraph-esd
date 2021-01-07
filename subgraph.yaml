@@ -5,7 +5,7 @@ schema:
   file: ./schema.graphql
 dataSources:
   - kind: ethereum/contract
-    name: Contract
+    name: DAOContract
     network: mainnet
     source:
       address: "0x443D2f2755DB5942601fa062Cc248aAA153313D3"
@@ -35,6 +35,16 @@ dataSources:
       eventHandlers:
         - event: Advance(indexed uint256,uint256,uint256)
           handler: handleAdvance
+        - event: Deposit(indexed address,uint256)
+          handler: handleDeposit
+        - event: Bond(indexed address,uint256,uint256,uint256)
+          handler: handleBond
+        - event: Vote(indexed address,indexed address,uint8,uint256)
+          handler: handleVote
+        - event: Unbond(indexed address,uint256,uint256,uint256)
+          handler: handleUnbond
+        - event: Withdraw(indexed address,uint256)
+          handler: handleWithdraw
         - event: CouponExpiration(indexed uint256,uint256,uint256,uint256,uint256)
           handler: handleCouponExpiration
         - event: CouponPurchase(indexed address,indexed uint256,uint256,uint256)
@@ -47,4 +57,150 @@ dataSources:
           handler: handleSupplyIncrease
         - event: SupplyNeutral(indexed uint256)
           handler: handleSupplyNeutral
+      file: ./src/mapping.ts
+  - kind: ethereum/contract
+    name: LP1Contract
+    network: mainnet
+    source:
+      address: "0xdF0Ae5504A48ab9f913F8490fBef1b9333A68e68"
+      abi: LPContract
+      startBlock: 10722660
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.4
+      language: wasm/assemblyscript
+      entities:
+        - Bond
+        - Unbond
+        - Deposit
+        - Withdraw
+        - Claim
+      abis:
+        - name: Contract
+          file: ./abis/Contract.json
+        - name: LPContract
+          file: ./abis/LPContract.json
+        - name: DollarContract
+          file: ./abis/DollarContract.json
+        - name: UniswapV2PairContract
+          file: ./abis/UniswapV2PairContract.json
+      eventHandlers:
+        - event: Deposit(indexed address,uint256)
+          handler: handleDepositLP
+        - event: Bond(indexed address,uint256,uint256)
+          handler: handleBondLP
+        - event: Unbond(indexed address,uint256,uint256,uint256)
+          handler: handleUnbondLP
+        - event: Withdraw(indexed address,uint256)
+          handler: handleWithdrawLP
+      file: ./src/mapping.ts
+  - kind: ethereum/contract
+    name: LP2Contract
+    network: mainnet
+    source:
+      address: "0xA5976897BC0081e3895013B08654DfEc50Bcb33F"
+      abi: LPContract
+      startBlock: 10895441
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.4
+      language: wasm/assemblyscript
+      entities:
+        - Bond
+        - Unbond
+        - Deposit
+        - Withdraw
+        - Claim
+      abis:
+        - name: Contract
+          file: ./abis/Contract.json
+        - name: LPContract
+          file: ./abis/LPContract.json
+        - name: DollarContract
+          file: ./abis/DollarContract.json
+        - name: UniswapV2PairContract
+          file: ./abis/UniswapV2PairContract.json
+      eventHandlers:
+        - event: Deposit(indexed address,uint256)
+          handler: handleDepositLP
+        - event: Bond(indexed address,uint256,uint256)
+          handler: handleBondLP
+        - event: Unbond(indexed address,uint256,uint256,uint256)
+          handler: handleUnbondLP
+        - event: Withdraw(indexed address,uint256)
+          handler: handleWithdrawLP
+      file: ./src/mapping.ts
+  - kind: ethereum/contract
+    name: LP3Contract
+    network: mainnet
+    source:
+      address: "0xBBDA9B2f267b94147cB5b51653237C2F1EE69054"
+      abi: LPContract
+      startBlock: 11045833
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.4
+      language: wasm/assemblyscript
+      entities:
+        - Advance
+        - CouponExpiration
+        - CouponPurchase
+        - CouponRedemption
+        - SupplyDecrease
+        - SupplyIncrease
+        - SupplyNeutral
+      abis:
+        - name: Contract
+          file: ./abis/Contract.json
+        - name: LPContract
+          file: ./abis/LPContract.json
+        - name: DollarContract
+          file: ./abis/DollarContract.json
+        - name: UniswapV2PairContract
+          file: ./abis/UniswapV2PairContract.json
+      eventHandlers:
+        - event: Deposit(indexed address,uint256)
+          handler: handleDepositLP
+        - event: Bond(indexed address,uint256,uint256)
+          handler: handleBondLP
+        - event: Unbond(indexed address,uint256,uint256,uint256)
+          handler: handleUnbondLP
+        - event: Withdraw(indexed address,uint256)
+          handler: handleWithdrawLP
+      file: ./src/mapping.ts
+  - kind: ethereum/contract
+    name: LP4Contract
+    network: mainnet
+    source:
+      address: "0x4082D11E506e3250009A991061ACd2176077C88f"
+      abi: LPContract
+      startBlock: 11225715
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.4
+      language: wasm/assemblyscript
+      entities:
+        - Bond
+        - Unbond
+        - Deposit
+        - Withdraw
+        - Claim
+      abis:
+        - name: Contract
+          file: ./abis/Contract.json
+        - name: LPContract
+          file: ./abis/LPContract.json
+        - name: DollarContract
+          file: ./abis/DollarContract.json
+        - name: UniswapV2PairContract
+          file: ./abis/UniswapV2PairContract.json
+      eventHandlers:
+        - event: Deposit(indexed address,uint256)
+          handler: handleDepositLP
+        - event: Bond(indexed address,uint256,uint256)
+          handler: handleBondLP
+        - event: Unbond(indexed address,uint256,uint256,uint256)
+          handler: handleUnbondLP
+        - event: Withdraw(indexed address,uint256)
+          handler: handleWithdrawLP
       file: ./src/mapping.ts

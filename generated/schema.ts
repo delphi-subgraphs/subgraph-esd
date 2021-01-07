@@ -405,20 +405,20 @@ export class LpTokenHistory extends Entity {
     this.set("id", Value.fromString(value));
   }
 
-  get epoch(): BigInt | null {
+  get epoch(): string | null {
     let value = this.get("epoch");
     if (value === null || value.kind == ValueKind.NULL) {
       return null;
     } else {
-      return value.toBigInt();
+      return value.toString();
     }
   }
 
-  set epoch(value: BigInt | null) {
+  set epoch(value: string | null) {
     if (value === null) {
       this.unset("epoch");
     } else {
-      this.set("epoch", Value.fromBigInt(value as BigInt));
+      this.set("epoch", Value.fromString(value as string));
     }
   }
 
@@ -504,20 +504,20 @@ export class EsdSupplyHistory extends Entity {
     this.set("id", Value.fromString(value));
   }
 
-  get epoch(): BigInt | null {
+  get epoch(): string | null {
     let value = this.get("epoch");
     if (value === null || value.kind == ValueKind.NULL) {
       return null;
     } else {
-      return value.toBigInt();
+      return value.toString();
     }
   }
 
-  set epoch(value: BigInt | null) {
+  set epoch(value: string | null) {
     if (value === null) {
       this.unset("epoch");
     } else {
-      this.set("epoch", Value.fromBigInt(value as BigInt));
+      this.set("epoch", Value.fromString(value as string));
     }
   }
 
@@ -603,72 +603,40 @@ export class BalanceStats extends Entity {
     this.set("id", Value.fromString(value));
   }
 
-  get total(): BigInt | null {
+  get total(): BigInt {
     let value = this.get("total");
-    if (value === null || value.kind == ValueKind.NULL) {
-      return null;
-    } else {
-      return value.toBigInt();
-    }
+    return value.toBigInt();
   }
 
-  set total(value: BigInt | null) {
-    if (value === null) {
-      this.unset("total");
-    } else {
-      this.set("total", Value.fromBigInt(value as BigInt));
-    }
+  set total(value: BigInt) {
+    this.set("total", Value.fromBigInt(value));
   }
 
-  get frozen(): BigInt | null {
+  get frozen(): BigInt {
     let value = this.get("frozen");
-    if (value === null || value.kind == ValueKind.NULL) {
-      return null;
-    } else {
-      return value.toBigInt();
-    }
+    return value.toBigInt();
   }
 
-  set frozen(value: BigInt | null) {
-    if (value === null) {
-      this.unset("frozen");
-    } else {
-      this.set("frozen", Value.fromBigInt(value as BigInt));
-    }
+  set frozen(value: BigInt) {
+    this.set("frozen", Value.fromBigInt(value));
   }
 
-  get fluid(): BigInt | null {
+  get fluid(): BigInt {
     let value = this.get("fluid");
-    if (value === null || value.kind == ValueKind.NULL) {
-      return null;
-    } else {
-      return value.toBigInt();
-    }
+    return value.toBigInt();
   }
 
-  set fluid(value: BigInt | null) {
-    if (value === null) {
-      this.unset("fluid");
-    } else {
-      this.set("fluid", Value.fromBigInt(value as BigInt));
-    }
+  set fluid(value: BigInt) {
+    this.set("fluid", Value.fromBigInt(value));
   }
 
-  get locked(): BigInt | null {
+  get locked(): BigInt {
     let value = this.get("locked");
-    if (value === null || value.kind == ValueKind.NULL) {
-      return null;
-    } else {
-      return value.toBigInt();
-    }
+    return value.toBigInt();
   }
 
-  set locked(value: BigInt | null) {
-    if (value === null) {
-      this.unset("locked");
-    } else {
-      this.set("locked", Value.fromBigInt(value as BigInt));
-    }
+  set locked(value: BigInt) {
+    this.set("locked", Value.fromBigInt(value));
   }
 }
 
@@ -836,7 +804,7 @@ export class LPBalance extends Entity {
   }
 }
 
-export class EpochSnapshots extends Entity {
+export class EpochSnapshot extends Entity {
   constructor(id: string) {
     super();
     this.set("id", Value.fromString(id));
@@ -844,17 +812,17 @@ export class EpochSnapshots extends Entity {
 
   save(): void {
     let id = this.get("id");
-    assert(id !== null, "Cannot save EpochSnapshots entity without an ID");
+    assert(id !== null, "Cannot save EpochSnapshot entity without an ID");
     assert(
       id.kind == ValueKind.STRING,
-      "Cannot save EpochSnapshots entity with non-string ID. " +
+      "Cannot save EpochSnapshot entity with non-string ID. " +
         'Considering using .toHex() to convert the "id" to a string.'
     );
-    store.set("EpochSnapshots", id.toString(), this);
+    store.set("EpochSnapshot", id.toString(), this);
   }
 
-  static load(id: string): EpochSnapshots | null {
-    return store.get("EpochSnapshots", id) as EpochSnapshots | null;
+  static load(id: string): EpochSnapshot | null {
+    return store.get("EpochSnapshot", id) as EpochSnapshot | null;
   }
 
   get id(): string {
@@ -965,20 +933,20 @@ export class FutureClaimableESD extends Entity {
     this.set("id", Value.fromString(value));
   }
 
-  get epoch(): BigInt | null {
+  get epoch(): string | null {
     let value = this.get("epoch");
     if (value === null || value.kind == ValueKind.NULL) {
       return null;
     } else {
-      return value.toBigInt();
+      return value.toString();
     }
   }
 
-  set epoch(value: BigInt | null) {
+  set epoch(value: string | null) {
     if (value === null) {
       this.unset("epoch");
     } else {
-      this.set("epoch", Value.fromBigInt(value as BigInt));
+      this.set("epoch", Value.fromString(value as string));
     }
   }
 
