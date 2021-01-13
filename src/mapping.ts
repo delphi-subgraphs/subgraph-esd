@@ -103,16 +103,25 @@ export function handleAdvance(event: Advance): void {
     esdSupplyHistory.lockedViaDAO = startTotalDAOESD
     esdSupplyHistory.save()
   }
-
-  // load previous stats / if epoch == 1 set everything to zero
-  log.warning("Handle Advance with Epoch {}", [epochId]);
-
   // Init Stats for new Epoch
-  let bonded = initStats(event.params.epoch, "bonded");
-  bonded.save();
+  let bondedDAO = getStats(event.params.epoch, "dao", "bonded");
+  bondedDAO.total = contract.totalBonded();
 
-  let staged = initStats(event.params.epoch, "staged");
-  staged.save();
+  // Switch Locked to Frozen after 9 Epochs
+  if(event.params.epoch.gt(BigInt.fromI32(9)) && bondedDAO.locked.gt(BigInt.fromI32(0))) {
+    let lockedStats1 = BalanceStats.load("dao-" + event.params.epoch.minus(BigInt.fromI32(10)).toString() + "-bonded");
+    let lockedStats2 = BalanceStats.load("dao-" + event.params.epoch.minus(BigInt.fromI32(9)).toString() + "-bonded");
+    let diff = lockedStats2.locked.minus(lockedStats1.locked)
+    bondedDAO.locked = bondedDAO.locked.minus(diff)
+    bondedDAO.frozen = bondedDAO.frozen.plus(diff)
+  }
+
+  bondedDAO.save()
+  let stagedDAO = getStats(event.params.epoch, "dao", "staged");
+  stagedDAO.total = contract.totalStaged();
+  stagedDAO.save()
+  let bondedLP = getStats(event.params.epoch, "lp", "bonded");
+  let stagedLP = getStats(event.params.epoch, "lp", "staged");
 
   // Create Datamodell based on Schema
   let daoBalance = new DAOBalance(epochId);
@@ -130,52 +139,113 @@ export function handleAdvance(event: Advance): void {
   epochSnapShots.save();
 }
 
+/**
+ * increaseSupply(lessRedeemable);
+ * @param event 
+ */
 export function handleCouponExpiration(event: CouponExpiration): void {
   let epochId = event.params.epoch.toString()
   let epoch = new Epoch(epochId)
   epoch.outstandingCoupons = BigInt.fromI32(0)
   epoch.expiredCoupons = event.params.couponsExpired
   epoch.save()
+
+
+  let stats = getStats(event.params.epoch, "dao", "bonded")
+  stats.frozen = stats.frozen.plus(event.params.newBonded);
+  stats.save();  
+
+  // 
+
 }
 
+/**
+ * burnFromAccount(msg.sender, dollarAmount);
+ * @param event 
+ */
 export function handleCouponPurchase(event: CouponPurchase): void {
   let epochId = event.params.epoch.toString()
   let epoch = Epoch.load(epochId)
   if (epoch == null) {
     epoch = new Epoch(epochId)
   }
-  
+
   let couponAmount = event.params.couponAmount
   epoch.outstandingCoupons = epoch.outstandingCoupons + couponAmount
   epoch.save()
+
+  // Burns ESD but not ESDS... So nothing changes?
+
 }
 
+/**
+ * redeemToAccount(msg.sender, couponAmount);
+ * @param event 
+ */
 export function handleCouponRedemption(event: CouponRedemption): void {
   let epochId = event.params.epoch.toString()
   let epoch = Epoch.load(epochId)
   if (epoch == null) {
     epoch = new Epoch(epochId)
   }
+  let contract = Contract.bind(DOLLAR_DAO_CONTRACT)
+
   
   let couponAmount = event.params.couponAmount
   epoch.outstandingCoupons = epoch.outstandingCoupons - couponAmount
   epoch.save()
+
+  // // + staged ? 
+  // let stats = getStats(event.params.epoch, "dao", "staged")
+  // stats.frozen = stats.frozen + couponAmount;
+  // stats.total = contract.totalStaged()
+  // stats.delta = stats.total - stats.frozen - stats.fluid - stats.locked
+  // stats.save();
 }
 
 export function handleSupplyDecrease(event: SupplyDecrease): void {
   let epochId = event.params.epoch.toString()
+  let multiplier = 95;
+  if(event.params.epoch.gt(BigInt.fromI32(86))) {
+    multiplier = 20;
+  }
   let epoch = new Epoch(epochId)
+  let contract = Contract.bind(DOLLAR_DAO_CONTRACT)
   epoch.oraclePrice = event.params.price
   epoch.deltaSupply = -event.params.newDebt
   epoch.save()
+
+  // do nothing?
 }
 
 export function handleSupplyIncrease(event: SupplyIncrease): void {
   let epochId = event.params.epoch.toString()
   let epoch = new Epoch(epochId)
+  let contract = Contract.bind(DOLLAR_DAO_CONTRACT)
+
   epoch.oraclePrice = event.params.price
   epoch.deltaSupply = event.params.newRedeemable + event.params.lessDebt + event.params.newBonded
   epoch.save()
+
+  // 5% minted to Pool (20% if epoch > 86)
+  let multiplier = event.params.epoch.gt(BigInt.fromI32(86)) ? BigInt.fromI32(20) : BigInt.fromI32(5);
+  let poolAmount = event.params.newBonded.times(multiplier).div(BigInt.fromI32(100)) // 20%
+
+  // 2.5% is minted to treasury if epoch > 213
+  let treasuryAmount = event.params.epoch.gt(BigInt.fromI32(213)) ? event.params.newBonded.times(BigInt.fromI32(250)).div(BigInt.fromI32(10000)) : BigInt.fromI32(0)  
+  
+  // rest is minted to dao
+  let daoAmount = event.params.newBonded.minus(poolAmount).minus(treasuryAmount);
+  
+  let stats = getStats(event.params.epoch, "dao", "bonded")
+  stats.total = contract.totalBonded()
+  stats.frozen = stats.frozen.plus(daoAmount) // somehow not working upon epoch 214
+  stats.frozen = stats.total.minus(stats.fluid).minus(stats.locked) // quickfix
+  stats.delta = stats.total - stats.frozen - stats.fluid - stats.locked
+  stats.save();
+
+  // @TODO add poolamount to LP
+  
 }
 
 export function handleSupplyNeutral(event: SupplyNeutral): void {
@@ -184,28 +254,8 @@ export function handleSupplyNeutral(event: SupplyNeutral): void {
   epoch.oraclePrice = BigInt.fromI32(1).pow(18)
   epoch.deltaSupply = BigInt.fromI32(0)
   epoch.save()
-}
 
-export function initStats(epoch: BigInt, event: string): BalanceStats {
-  let stats = new BalanceStats("dao-" +epoch.toString() + "-" + event);
-  log.warning("Init Stats for EPOCH {} {}", [epoch.toString(), event])
-  
-  // Start with 0 on First Epoch
-  if(epoch.toString() == "1") {
-    stats.total = BigInt.fromI32(0);
-    stats.frozen = BigInt.fromI32(0);
-    stats.fluid = BigInt.fromI32(0);
-    stats.locked = BigInt.fromI32(0);
-    return stats;
-  }
-
-  // move Fluid to Frozen on new Epoch
-  let previousStats = BalanceStats.load("dao-" +epoch.minus(BigInt.fromI32(1)).toString() + "-" + event);
-  stats.total = previousStats.total
-  stats.frozen = previousStats.frozen.plus(previousStats.fluid);
-  stats.fluid = BigInt.fromI32(0)
-  stats.locked = BigInt.fromI32(0)
-  return stats;
+  // do nothing?
 }
 
 /**
@@ -216,11 +266,10 @@ export function handleDeposit(event: Deposit): void {
   let contract = Contract.bind(DOLLAR_DAO_CONTRACT)
   let epoch = contract.epoch()
 
-  log.warning("Handle deposit of {} with {} Tokens at epoch {}", [event.params.account.toHexString(), event.params.value.toString(), epoch.toString()]);
-  
-  let balanceStaged = BalanceStats.load("dao-" + epoch.toString() + "-staged");
-  balanceStaged.frozen = balanceStaged.frozen.plus(event.params.value);
+  let balanceStaged = getStats(epoch, "dao", "staged")
+  balanceStaged.fluid = balanceStaged.fluid.plus(event.params.value);
   balanceStaged.total =  contract.totalStaged()
+  balanceStaged.delta = balanceStaged.total - balanceStaged.frozen - balanceStaged.fluid - balanceStaged.locked
   balanceStaged.save();
 }
 
@@ -230,14 +279,20 @@ export function handleDeposit(event: Deposit): void {
 export function handleWithdraw(event: Withdraw): void {
   let contract = Contract.bind(DOLLAR_DAO_CONTRACT)
   let epoch = contract.epoch()
+  let epochId = epoch.toString()
+  let balanceStaged = getStats(epoch, "dao", "staged")
 
-  log.warning("Handle Withdraw of {} with {} Tokens at epoch {}", [event.params.account.toHexString(), event.params.value.toString(), epoch.toString()]);
-  let balanceStaged = BalanceStats.load("dao-" + epoch.toString() + "-staged");
-  balanceStaged.frozen = balanceStaged.frozen.minus(event.params.value);
+  // @TODO: fluid or frozen? -> check user status
+  if(balanceStaged.frozen >= event.params.value) {
+    balanceStaged.frozen = balanceStaged.frozen.minus(event.params.value);
+  } else {
+    balanceStaged.fluid = balanceStaged.fluid.minus(event.params.value);
+  }
+  
   balanceStaged.total = contract.totalStaged()
+  balanceStaged.delta = balanceStaged.total - balanceStaged.frozen - balanceStaged.fluid - balanceStaged.locked
   balanceStaged.save();
 }
-
 
 /**
  * incrementBalanceOf(msg.sender, balance);
@@ -248,19 +303,37 @@ export function handleWithdraw(event: Withdraw): void {
 export function handleBond(event: Bond): void {
   let contract = Contract.bind(DOLLAR_DAO_CONTRACT)
   let epoch = contract.epoch()
-
-  log.warning("Handle bond of {} with {} Tokens at epoch {}", [event.params.account.toHexString(), event.params.valueUnderlying.toString(), epoch.toString()]);
-  
+  let epochId = epoch.toString()
   // incrementTotalBonded(value);
-  let balanceBonded = BalanceStats.load("dao-" + epoch.toString() + "-bonded");
+  let balanceBonded = getStats(epoch, "dao", "bonded")
   balanceBonded.fluid = balanceBonded.fluid.plus(event.params.valueUnderlying);
   balanceBonded.total = contract.totalBonded()
+  balanceBonded.delta = balanceBonded.total - balanceBonded.frozen - balanceBonded.fluid - balanceBonded.locked
   balanceBonded.save();
 
   // decrementBalanceOfStaged(msg.sender, value, "Bonding: insufficient staged balance");
-  let balanceStaged = BalanceStats.load("dao-" + epoch.toString() + "-staged");
-  balanceStaged.frozen = balanceStaged.frozen.minus(event.params.valueUnderlying);
+  let balanceStaged = getStats(epoch, "dao", "staged")
+
+  // can bond on fluid or/and frozen
+  let status = contract.statusOf(event.params.account) // 0 = Frozen, 1 = Fluid, 2 = Locked
+  if(BigInt.fromI32(0).equals(BigInt.fromI32(status))) { // Frozen
+    balanceStaged.frozen = balanceStaged.frozen.minus(event.params.valueUnderlying);
+  } else if(BigInt.fromI32(1).equals(BigInt.fromI32(status))) { // Fluid
+    // can be partially fluid and frozen
+    if(balanceStaged.fluid >= event.params.valueUnderlying) {
+      balanceStaged.fluid = balanceStaged.fluid.minus(event.params.valueUnderlying);
+    } else {
+      // cant say at this moment how much is frozen and fluid, therefore set fluid to zero and take rest from frozen
+      let diff = event.params.valueUnderlying.minus(balanceStaged.fluid);
+      balanceStaged.fluid = BigInt.fromI32(0);
+      balanceStaged.frozen = balanceStaged.frozen.minus(diff);
+    }
+  } else { // locked
+    // log.warning("bond locked at epoch {}", [epochId])
+  }
+
   balanceStaged.total = contract.totalStaged()
+  balanceStaged.delta = balanceStaged.total - balanceStaged.frozen - balanceStaged.fluid - balanceStaged.locked
   balanceStaged.save();
 }
 
@@ -272,40 +345,72 @@ export function handleBond(event: Bond): void {
 export function handleUnbond(event: Unbond): void {
   let contract = Contract.bind(DOLLAR_DAO_CONTRACT)
   let epoch = contract.epoch()
-
-  log.warning("Handle bond of {} with {} Tokens at epoch {}", [event.params.account.toHexString(), event.params.valueUnderlying.toString(), epoch.toString()]);
+  let epochId = epoch.toString()
   
   // decrementTotalBonded(staged, "Bonding: insufficient total bonded");
-  let balanceBonded = BalanceStats.load("dao-" + epoch.toString() + "-bonded");
-  balanceBonded.frozen = balanceBonded.frozen.minus(event.params.valueUnderlying);
+  let balanceBonded = getStats(epoch, "dao", "bonded")
+   // use fluid if not enough frozen (because you can bond whether you are in frozen or fluid state)
+   // depends on user state @TODO add accountinfo
+  let statusOfUser = contract.statusOf(event.params.account)
+  let bondedOfUser = contract.balanceOfBonded(event.params.account)
+  if(BigInt.fromI32(0).equals(BigInt.fromI32(statusOfUser))) { // Frozen
+      balanceBonded.frozen = balanceBonded.frozen.minus(event.params.valueUnderlying);
+  } else if(BigInt.fromI32(1).equals(BigInt.fromI32(statusOfUser))) { // Fluid
+    if (balanceBonded.fluid >= event.params.valueUnderlying) {
+      balanceBonded.fluid = balanceBonded.fluid.minus(event.params.valueUnderlying);
+    } else {
+      // cant say at this moment how much is frozen and fluid, therefore set fluid to zero and take rest from frozen
+      let diff = event.params.valueUnderlying.minus(balanceBonded.fluid);
+      balanceBonded.fluid = BigInt.fromI32(0);
+      balanceBonded.frozen = balanceBonded.frozen.minus(diff);
+    }
+  } else { // Locked
+    log.warning("unbond locked at epoch {}", [epochId])
+  }
+  
   balanceBonded.total = contract.totalBonded()
+  balanceBonded.delta = balanceBonded.total - (balanceBonded.frozen + balanceBonded.fluid + balanceBonded.locked)
   balanceBonded.save();
 
   // incrementBalanceOfStaged(msg.sender, staged);
-  let balanceStaged = BalanceStats.load("dao-" + epoch.toString() + "-staged");
+  let balanceStaged = getStats(epoch, "dao", "staged")
   balanceStaged.fluid = balanceStaged.fluid.plus(event.params.valueUnderlying);
   balanceStaged.total = contract.totalStaged()
+  balanceStaged.delta = balanceStaged.total - balanceStaged.frozen - balanceStaged.fluid - balanceStaged.locked
   balanceStaged.save();
 }
 
 /**
- * Move Funds from Bonded-Frozen to Bonded-Locked
+ * Move Funds from Fluid or Frozen to Locked (Staged or Bonded)
  * @param event 
  */
 export function handleVote(event: Vote): void {
   let contract = Contract.bind(DOLLAR_DAO_CONTRACT)
   let epoch = contract.epoch()
 
-  log.warning("Handle Vote of {} with {} bonded at epoch {}", [event.params.account.toHexString(), event.params.bonded.toString(), epoch.toString()]);
+  let balanceBonded = getStats(epoch, "dao", "bonded")
+  let balanceStaged = getStats(epoch, "dao", "staged")
+  let dollarContract = DollarContract.bind(DOLLAR_CONTRACT_ADDRESS)
+  let daoESD = dollarContract.balanceOf(DOLLAR_DAO_CONTRACT)
+  let underlyingBonded = daoESD.times(event.params.bonded).div(contract.totalSupply())
 
-  // let balanceBonded = BalanceStats.load("dao-" + epoch.toString() + "-bonded");
-  // balanceBonded.frozen = balanceBonded.frozen.minus(event.params);
-  // balanceBonded.locked = balanceBonded.locked.plus(event.params.bonded);
-  // balanceBonded.save();
+  // can be frozen, fluid (bonded and staged)
+  let accountBonded = contract.balanceOfBonded(event.params.account)
+  let accountStaged = contract.balanceOfStaged(event.params.account)
+
+  // let diff = accountStaged - accountBonded
+  // if(diff > 0) {
+  //   balanceStaged.frozen = balanceStaged.fro
+  // }
+  
+  balanceBonded.frozen = balanceBonded.frozen.minus(accountBonded);
+  balanceBonded.locked = balanceBonded.locked.plus(accountBonded);
+
+  
+  balanceBonded.total = contract.totalBonded()
+  balanceBonded.delta = balanceBonded.total - (balanceBonded.locked + balanceBonded.fluid + balanceBonded.frozen)
+  // balanceBonded.save()
 }
-
-
-
 
 export function handleDepositLP(event: Deposit): void {
   // let contract = Contract.bind(DOLLAR_DAO_CONTRACT)
@@ -365,4 +470,36 @@ export function handleWithdrawLP(event: Withdraw): void {
   // let contract = Contract.bind(DOLLAR_DAO_CONTRACT)
   // let epoch = contract.epoch()
   // log.warning("Handle Withdraw lp of {} with {} Tokens at epoch {}", [event.params.account.toHexString(), event.params.value.toString(), epoch.toString()]);
+}
+
+export function getStats(epoch: BigInt, cat: string, event: string): BalanceStats | null {
+  let stats = BalanceStats.load(cat + "-" +epoch.toString() + "-" + event);
+  if(stats == null) {
+    stats = new BalanceStats(cat + "-" +epoch.toString() + "-" + event);
+  
+    // Start with 0 on First Epoch
+    if(epoch.toString() == "1") {
+      stats.total = BigInt.fromI32(0);
+      stats.frozen = BigInt.fromI32(0);
+      stats.fluid = BigInt.fromI32(0);
+      stats.locked = BigInt.fromI32(0);
+      stats.delta = BigInt.fromI32(0);
+      stats.save();
+      return stats;
+    }
+
+    // @TODO: lock = previousLock - lockFromEpoch-9
+
+    // move Fluid to Frozen on new Epoch
+    let previousStats = BalanceStats.load(cat + "-" + epoch.minus(BigInt.fromI32(1)).toString() + "-" + event);
+    stats.total = previousStats.total
+    stats.frozen = previousStats.frozen.plus(previousStats.fluid)
+    stats.fluid = BigInt.fromI32(0)
+    stats.locked = previousStats.locked
+
+    stats.delta = stats.total - (stats.frozen + stats.fluid + stats.locked)
+    stats.save();
+  }
+  
+  return stats;
 }

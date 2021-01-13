@@ -50,6 +50,7 @@ type BalanceStats @entity {
   frozen: BigInt!
   fluid: BigInt!
   locked: BigInt!
+  delta: BigInt!
 }
 
 type DAOBalance @entity {
@@ -79,4 +80,9 @@ type FutureClaimableESD @entity {
   epoch: Epoch
   daoClaimable: BigInt
   lpClaimable: BigInt
+}
+
+type AccountInfo @entity {
+  id: ID!
+  
 }

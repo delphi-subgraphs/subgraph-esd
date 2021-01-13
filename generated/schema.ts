@@ -638,6 +638,15 @@ export class BalanceStats extends Entity {
   set locked(value: BigInt) {
     this.set("locked", Value.fromBigInt(value));
   }
+
+  get delta(): BigInt {
+    let value = this.get("delta");
+    return value.toBigInt();
+  }
+
+  set delta(value: BigInt) {
+    this.set("delta", Value.fromBigInt(value));
+  }
 }
 
 export class DAOBalance extends Entity {
