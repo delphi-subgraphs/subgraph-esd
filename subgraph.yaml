@@ -41,8 +41,6 @@ dataSources:
           handler: handleBond
         - event: Vote(indexed address,indexed address,uint8,uint256)
           handler: handleVote
-        - event: Commit(indexed address,indexed address)
-          handler: handleCommit
         - event: Unbond(indexed address,uint256,uint256,uint256)
           handler: handleUnbond
         - event: Withdraw(indexed address,uint256)
