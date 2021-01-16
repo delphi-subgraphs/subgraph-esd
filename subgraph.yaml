@@ -93,6 +93,8 @@ dataSources:
           handler: handleUnbondLP
         - event: Withdraw(indexed address,uint256)
           handler: handleWithdrawLP
+        - event: Provide(indexed address,uint256,uint256,uint256)
+          handler: handleProvideLP
       file: ./src/mapping.ts
   - kind: ethereum/contract
     name: LP2Contract

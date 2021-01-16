@@ -1,3 +1,4 @@
+import { Provide } from './../generated/DAOContract/LPContract';
 import { Deposit, Unbond, Withdraw,   Contract,
   Advance,
   CouponExpiration,
@@ -8,11 +9,14 @@ import { Deposit, Unbond, Withdraw,   Contract,
   SupplyNeutral,
   Vote,
   Bond } from './../generated/DAOContract/Contract';
+
 import { EpochSnapshot, DAOBalance, BalanceStats, LPBalance } from './../generated/schema';
-import { BigInt, Address } from "@graphprotocol/graph-ts"
+import { BigInt, Address, ethereum } from "@graphprotocol/graph-ts"
 
 import {
   LPContract,
+  Bond as LPBond,
+  Unbond as LPUnbond
 } from "../generated/DAOContract/LPContract"
 import {
   DollarContract,
@@ -34,6 +38,12 @@ let DOLLAR_CONTRACT_ADDRESS = Address.fromString('36F3FD68E7325a35EB768F1AedaAe9
 
 // Dollar DAO Contract
 let DOLLAR_DAO_CONTRACT = Address.fromString('443D2f2755DB5942601fa062Cc248aAA153313D3');
+
+// LP Pools
+let POOL_1_ADDRESS = Address.fromString("0xdF0Ae5504A48ab9f913F8490fBef1b9333A68e68")
+let POOL_2_ADDRESS = Address.fromString("0xA5976897BC0081e3895013B08654DfEc50Bcb33F")
+let POOL_3_ADDRESS = Address.fromString("0xBBDA9B2f267b94147cB5b51653237C2F1EE69054")
+let POOL_4_ADDRESS = Address.fromString("0x4082D11E506e3250009A991061ACd2176077C88f")
 
 export function handleAdvance(event: Advance): void {
   let epochId = event.params.epoch.toString()
@@ -75,7 +85,6 @@ export function handleAdvance(event: Advance): void {
   if(startTotalLPTokens > BigInt.fromI32(0)) {
     epoch.startLPTotalBondedESD = (startLPTotalBondedTokens * startTotalLPESD) / startTotalLPTokens
     epoch.startLPTotalStagedESD = (startLPTotalStagedTokens * startTotalLPESD) / startTotalLPTokens
-
   }
 
   epoch.startLPTotalStagedTokens = startLPTotalStagedTokens
@@ -107,7 +116,7 @@ export function handleAdvance(event: Advance): void {
   let bondedDAO = getStats(event.params.epoch, "dao", "bonded");
   bondedDAO.total = contract.totalBonded();
 
-  // Switch Locked to Frozen after 9 Epochs
+  // Release vote locked after 9 epochs
   if(event.params.epoch.gt(BigInt.fromI32(9)) && bondedDAO.locked.gt(BigInt.fromI32(0))) {
     let lockedStats1 = BalanceStats.load("dao-" + event.params.epoch.minus(BigInt.fromI32(10)).toString() + "-bonded");
     let lockedStats2 = BalanceStats.load("dao-" + event.params.epoch.minus(BigInt.fromI32(9)).toString() + "-bonded");
@@ -130,12 +139,19 @@ export function handleAdvance(event: Advance): void {
   daoBalance.staged = "dao-" + epochId + "-staged";
   daoBalance.save();
 
+  let lpBalance = new LPBalance(epochId);
+  lpBalance.id = epochId;
+  lpBalance.bonded = "lp-" + epochId + "-bonded";
+  lpBalance.staged = "lp-" + epochId + "-staged";
+  lpBalance.save();
+
   // init epoch new snapshot
   let epochSnapShots = new EpochSnapshot(epochId);
   epochSnapShots.id = epochId
   epochSnapShots.epoch = event.params.epoch;
   epochSnapShots.timestamp = event.params.timestamp;
   epochSnapShots.dao = epochId;
+  epochSnapShots.lp = epochId;
   epochSnapShots.save();
 }
 
@@ -244,7 +260,12 @@ export function handleSupplyIncrease(event: SupplyIncrease): void {
   stats.delta = stats.total - stats.frozen - stats.fluid - stats.locked
   stats.save();
 
-  // @TODO add poolamount to LP
+  let lpStats = getStats(event.params.epoch, "lp", "bonded")
+  lpStats.total = contract.totalBonded()
+  lpStats.frozen = lpStats.frozen.plus(poolAmount) // somehow not working upon epoch 214
+  lpStats.frozen = lpStats.total.minus(lpStats.fluid).minus(lpStats.locked) // quickfix
+  lpStats.delta = lpStats.total - lpStats.frozen - lpStats.fluid - lpStats.locked
+  stats.save();
   
 }
 
@@ -283,6 +304,7 @@ export function handleWithdraw(event: Withdraw): void {
   let balanceStaged = getStats(epoch, "dao", "staged")
 
   // @TODO: fluid or frozen? -> check user status
+  // Basically can only withdraw frozen
   if(balanceStaged.frozen >= event.params.value) {
     balanceStaged.frozen = balanceStaged.frozen.minus(event.params.value);
   } else {
@@ -329,7 +351,7 @@ export function handleBond(event: Bond): void {
       balanceStaged.frozen = balanceStaged.frozen.minus(diff);
     }
   } else { // locked
-    // log.warning("bond locked at epoch {}", [epochId])
+    // should not occur because of onlyFluidOrFrozen modifier
   }
 
   balanceStaged.total = contract.totalStaged()
@@ -352,7 +374,6 @@ export function handleUnbond(event: Unbond): void {
    // use fluid if not enough frozen (because you can bond whether you are in frozen or fluid state)
    // depends on user state @TODO add accountinfo
   let statusOfUser = contract.statusOf(event.params.account)
-  let bondedOfUser = contract.balanceOfBonded(event.params.account)
   if(BigInt.fromI32(0).equals(BigInt.fromI32(statusOfUser))) { // Frozen
       balanceBonded.frozen = balanceBonded.frozen.minus(event.params.valueUnderlying);
   } else if(BigInt.fromI32(1).equals(BigInt.fromI32(statusOfUser))) { // Fluid
@@ -365,7 +386,7 @@ export function handleUnbond(event: Unbond): void {
       balanceBonded.frozen = balanceBonded.frozen.minus(diff);
     }
   } else { // Locked
-    log.warning("unbond locked at epoch {}", [epochId])
+    // should not occur because of onlyFluidOrFrozen modifier
   }
   
   balanceBonded.total = contract.totalBonded()
@@ -412,52 +433,134 @@ export function handleVote(event: Vote): void {
   // balanceBonded.save()
 }
 
+
+
+export function handleDepostLP1(event: L)
+
 export function handleDepositLP(event: Deposit): void {
-  // let contract = Contract.bind(DOLLAR_DAO_CONTRACT)
-  // let epoch = contract.epoch()
-  // let lpContract = LPContract.bind(event.address);
-  // let balance = BalanceStats.load("lp-" + epoch.toString() + "-staged")
-  // balance.frozen = balance.frozen.plus(event.params.value);
-  // balance.total = lpContract.totalStaged()
-  // balance.save();
-  // log.warning("Handled deposit lp of {} with {} Tokens at epoch {}", [event.params.account.toHexString(), event.params.value.toString(), epoch.toString()]);
+  let contract = Contract.bind(DOLLAR_DAO_CONTRACT)
+  let epoch = contract.epoch()
+  let lpContract = LPContract.bind(event.address);
+  let balanceStaged = getStats(epoch, "lp", "staged")
+  balanceStaged.fluid = balanceStaged.fluid.plus(event.params.value);
+  balanceStaged.total =  getStagedLP(event.address)
+  balanceStaged.delta = balanceStaged.total - balanceStaged.frozen - balanceStaged.fluid - balanceStaged.locked
+  balanceStaged.save();
+  if(balanceStaged.delta != BigInt.fromI32(0)) {
+    log.warning("deposit staged delta unequal epoch {}", [epoch.toString()])
+  }
 }
 
-export function handleBondLP(event: Bond): void {
+export function handleWithdrawLP(event: Withdraw): void {
+  let contract = Contract.bind(DOLLAR_DAO_CONTRACT)
+  let epoch = contract.epoch()
+  let lpContract = LPContract.bind(event.address);
+
+  let balanceStaged = getStats(epoch, "lp", "staged")
+
+  // @TODO: fluid or frozen? -> check user status
+  if(balanceStaged.frozen >= event.params.value) {
+    balanceStaged.frozen = balanceStaged.frozen.minus(event.params.value);
+  } else {
+    balanceStaged.fluid = balanceStaged.fluid.minus(event.params.value);
+  }
+  
+  balanceStaged.total = getStagedLP(event.address)
+  balanceStaged.delta = balanceStaged.total - balanceStaged.frozen - balanceStaged.fluid - balanceStaged.locked
+  balanceStaged.save();
+  if(balanceStaged.delta != BigInt.fromI32(0)) {
+    log.warning("withdraw staged delta unequal epoch {}", [epoch.toString()])
+  }
+}
+
+export function handleBondLP(event: LPBond): void {
   let contract = Contract.bind(DOLLAR_DAO_CONTRACT)
   let lpContract = LPContract.bind(event.address);
-  // let epoch = contract.epoch()
-  // let balanceStaged = BalanceStats.load("lp-" + epoch.toString() + "-staged");
-  // balanceStaged.frozen = event.params.valueUnderlying
-  // balanceStaged.total = contract.totalStaged()
-  // balanceStaged.save();
+  let epoch = contract.epoch()
+  let epochId = epoch.toString()
 
-  // let id = "lp-" + epoch.toString() + "-bonded"
-  // let balance = BalanceStats.load(id);
-  // balance.frozen = balance.frozen.plus(event.params.valueUnderlying);
-  // balance.total = contract.totalBonded()
-  // balance.id = id
-  // balance.save();
-  // log.warning("Handled bond lp of {} with {} Tokens at epoch {}", [event.params.account.toHexString(), event.params.valueUnderlying.toString(), epoch.toString()]);
+
+  // incrementTotalBonded(value);
+  let balanceBonded = getStats(epoch, "lp", "bonded")
+  balanceBonded.fluid = balanceBonded.fluid.plus(event.params.value);
+  balanceBonded.total = getBondedLP(event.address)
+  balanceBonded.delta = balanceBonded.total - balanceBonded.frozen - balanceBonded.fluid - balanceBonded.locked
+  balanceBonded.save();
+  if(balanceBonded.delta != BigInt.fromI32(0)) {
+    log.warning("bond bonded delta unequal epoch {}", [epoch.toString()])
+  }
+
+
+  // decrementBalanceOfStaged(msg.sender, value, "Bonding: insufficient staged balance");
+  let balanceStaged = getStats(epoch, "lp", "staged")
+  // can bond on fluid or/and frozen
+  let status = lpContract.statusOf(event.params.account) // 0 = Frozen, 1 = Fluid, 2 = Locked
+  if(BigInt.fromI32(0).equals(BigInt.fromI32(status))) { // Frozen
+    balanceStaged.frozen = balanceStaged.frozen.minus(event.params.value);
+  } else if(BigInt.fromI32(1).equals(BigInt.fromI32(status))) { // Fluid
+    // can be partially fluid and frozen
+    if(balanceStaged.fluid >= event.params.value) {
+      balanceStaged.fluid = balanceStaged.fluid.minus(event.params.value);
+    } else {
+      // cant say at this moment how much is frozen and fluid, therefore set fluid to zero and take rest from frozen
+      let diff = event.params.value.minus(balanceStaged.fluid);
+      balanceStaged.fluid = BigInt.fromI32(0);
+      balanceStaged.frozen = balanceStaged.frozen.minus(diff);
+    }
+  } else { // locked
+    // should not occur because of onlyFluidOrFrozen modifier
+  }
+
+  balanceStaged.total = getStagedLP(event.address)
+  balanceStaged.delta = balanceStaged.total - balanceStaged.frozen - balanceStaged.fluid - balanceStaged.locked
+  balanceStaged.save();
+  if(balanceStaged.delta != BigInt.fromI32(0)) {
+    log.warning("bond staged delta unequal epoch {}", [epoch.toString()])
+  }
 }
 
-export function handleUnbondLP(event: Unbond): void {
-  // let contract = Contract.bind(DOLLAR_DAO_CONTRACT)
-  // let epoch = contract.epoch()
-  // let balanceBonded = BalanceStats.load("lp-" + epoch.toString() + "-bonded");
-  // balanceBonded.total = contract.totalBonded()
-  // // Fluid / Frozen?
+export function handleUnbondLP(event: LPUnbond): void {
+  let contract = Contract.bind(DOLLAR_DAO_CONTRACT)
+  let lpContract = LPContract.bind(event.address);
+  let epoch = contract.epoch()
+  let epochId = epoch.toString()
+  
+  // decrementTotalBonded(staged, "Bonding: insufficient total bonded");
+  let balanceBonded = getStats(epoch, "lp", "bonded")
+   // use fluid if not enough frozen (because you can bond whether you are in frozen or fluid state)
+   // depends on user state @TODO add accountinfo
+  let statusOfUser = lpContract.statusOf(event.params.account)
+  if(BigInt.fromI32(0).equals(BigInt.fromI32(statusOfUser))) { // Frozen
+      balanceBonded.frozen = balanceBonded.frozen.minus(event.params.value);
+  } else if(BigInt.fromI32(1).equals(BigInt.fromI32(statusOfUser))) { // Fluid
+    if (balanceBonded.fluid >= event.params.value) {
+      balanceBonded.fluid = balanceBonded.fluid.minus(event.params.value);
+    } else {
+      // cant say at this moment how much is frozen and fluid, therefore set fluid to zero and take rest from frozen
+      let diff = event.params.value.minus(balanceBonded.fluid);
+      balanceBonded.fluid = BigInt.fromI32(0);
+      balanceBonded.frozen = balanceBonded.frozen.minus(diff);
+    }
+  } else { // Locked
+    // should not occur because of onlyFluidOrFrozen modifier
+  }
+  
+  balanceBonded.total = getBondedLP(event.address)
+  balanceBonded.delta = balanceBonded.total - (balanceBonded.frozen + balanceBonded.fluid + balanceBonded.locked)
+  balanceBonded.save();
+  if(balanceBonded.delta != BigInt.fromI32(0)) {
+    log.warning("unbond bonded delta unequal epoch {}", [epoch.toString()])
+  }
 
-  // let balanceStaged = BalanceStats.load("lp-" + epoch.toString() + "-staged");
-  // balanceStaged.total = contract.totalStaged()
-  // balanceStaged.frozen = balanceStaged.frozen.plus(event.params.valueUnderlying)
-
-  // balanceStaged.save();
-  // log.warning("Handled unbond lp of {} with {} Tokens at epoch {}", [event.params.account.toHexString(), event.params.valueUnderlying.toString(), epoch.toString()]);
-  // // let balance = BalanceStats.load("lp-" + epoch.toString() + "-staged");
-  // // balance.frozen.plus(event.params.value);
-  // // balance.total = contract.totalStaged();
-  // // balance.save();
+  // incrementBalanceOfStaged(msg.sender, staged);
+  let balanceStaged = getStats(epoch, "lp", "staged")
+  balanceStaged.fluid = balanceStaged.fluid.plus(event.params.value);
+  balanceStaged.total = getStagedLP(event.address)
+  balanceStaged.delta = balanceStaged.total - balanceStaged.frozen - balanceStaged.fluid - balanceStaged.locked
+  balanceStaged.save();
+  if(balanceStaged.delta != BigInt.fromI32(0)) {
+    log.warning("unbond staged delta unequal epoch {}", [epoch.toString()])
+  }
 }
 
 export function handleVoteLP(event: Vote): void {
@@ -466,10 +569,19 @@ export function handleVoteLP(event: Vote): void {
   // log.warning("Handle Vote lp of {} with {} bonded at epoch {}", [event.params.account.toHexString(), event.params.bonded.toString(), epoch.toString()]);
 }
 
-export function handleWithdrawLP(event: Withdraw): void {
-  // let contract = Contract.bind(DOLLAR_DAO_CONTRACT)
-  // let epoch = contract.epoch()
-  // log.warning("Handle Withdraw lp of {} with {} Tokens at epoch {}", [event.params.account.toHexString(), event.params.value.toString(), epoch.toString()]);
+/**
+ * incrementBalanceOfBonded(msg.sender, newUniv2);
+ * @param event 
+ */
+export function handleProvideLP(event: Provide): void {
+  let contract = Contract.bind(DOLLAR_DAO_CONTRACT)
+  let lpContract = LPContract.bind(event.address);
+  let epoch = contract.epoch()
+  let balanceBonded = getStats(epoch, "lp", "bonded")
+  balanceBonded.fluid = balanceBonded.fluid.plus(event.params.newUniv2);
+  balanceBonded.total = lpContract.totalBonded()
+  balanceBonded.delta = balanceBonded.total - (balanceBonded.frozen + balanceBonded.fluid + balanceBonded.locked)
+  balanceBonded.save()
 }
 
 export function getStats(epoch: BigInt, cat: string, event: string): BalanceStats | null {
@@ -502,4 +614,42 @@ export function getStats(epoch: BigInt, cat: string, event: string): BalanceStat
   }
   
   return stats;
+}
+
+export function getBondedLP(address: Address): BigInt {
+  let lpContract1 = LPContract.bind(POOL_1_ADDRESS);
+  let lpContract2 = LPContract.bind(POOL_2_ADDRESS)
+  let lpContract3 = LPContract.bind(POOL_3_ADDRESS)
+  let lpContract4 = LPContract.bind(POOL_4_ADDRESS)
+  let result = BigInt.fromI32(0)
+  if(address.equals(POOL_4_ADDRESS)) {
+    result = result.plus(lpContract4.totalBonded()).plus(lpContract3.totalBonded()).plus(lpContract2.totalBonded()).plus(lpContract1.totalBonded())
+  } else if(address.equals(POOL_3_ADDRESS)) {
+    result = result.plus(lpContract3.totalBonded()).plus(lpContract2.totalBonded()).plus(lpContract1.totalBonded())
+  }else if(address.equals(POOL_2_ADDRESS)) {
+    result = result.plus(lpContract2.totalBonded()).plus(lpContract1.totalBonded())
+  }else if(address.equals(POOL_1_ADDRESS)){
+    result = result.plus(lpContract1.totalBonded())
+  }
+
+  return result;
+}
+
+export function getStagedLP(address: Address): BigInt {
+  let lpContract1 = LPContract.bind(POOL_1_ADDRESS);
+  let lpContract2 = LPContract.bind(POOL_2_ADDRESS)
+  let lpContract3 = LPContract.bind(POOL_3_ADDRESS)
+  let lpContract4 = LPContract.bind(POOL_4_ADDRESS)
+  let result = BigInt.fromI32(0)
+  if(address.equals(POOL_4_ADDRESS)) {
+    result = result.plus(lpContract4.totalStaged()).plus(lpContract3.totalStaged()).plus(lpContract2.totalStaged()).plus(lpContract1.totalStaged())
+  } else if(address.equals(POOL_3_ADDRESS)) {
+    result = result.plus(lpContract3.totalStaged()).plus(lpContract2.totalStaged()).plus(lpContract1.totalStaged())
+  }else if(address.equals(POOL_2_ADDRESS)) {
+    result = result.plus(lpContract2.totalStaged()).plus(lpContract1.totalStaged())
+  }else {
+    result = result.plus(lpContract1.totalStaged())
+  }
+
+  return result;
 }

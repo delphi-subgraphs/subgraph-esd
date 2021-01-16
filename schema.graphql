@@ -82,7 +82,7 @@ type FutureClaimableESD @entity {
   lpClaimable: BigInt
 }
 
-type AccountInfo @entity {
+type AddressInfo @entity {
   id: ID!
   
 }
