@@ -27,3 +27,62 @@ type Epoch @entity {
 
   bootstrappingAt: Boolean
 }
+
+type LpTokenHistory @entity {
+  id: ID!
+  epoch: Epoch
+  totalStaged: BigInt
+  totalBonded: BigInt
+  totalSupply: BigInt
+}
+
+type EsdSupplyHistory @entity {
+  id: ID!
+  epoch: Epoch
+  lockedViaDAO: BigInt
+  lockedViaLP: BigInt
+  totalSupply: BigInt
+}
+
+type BalanceStats @entity {
+  id: ID!
+  total: BigInt!
+  frozen: BigInt!
+  fluid: BigInt!
+  locked: BigInt!
+  delta: BigInt!
+}
+
+type DAOBalance @entity {
+  id: ID!
+  bonded: BalanceStats
+  staged: BalanceStats
+}
+
+type LPBalance @entity {
+  id: ID!
+  bonded: BalanceStats
+  staged: BalanceStats
+  reward: BalanceStats
+  claimable: BigInt
+}
+
+type EpochSnapshot @entity {
+  id: ID!
+  epoch: BigInt
+  timestamp: BigInt
+  dao: DAOBalance
+  lp: LPBalance
+}
+
+type FutureClaimableESD @entity {
+  id: ID!
+  epoch: Epoch
+  daoClaimable: BigInt
+  lpClaimable: BigInt
+}
+
+type AddressInfo @entity {
+  id: ID!
+  
+}
