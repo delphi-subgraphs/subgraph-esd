@@ -1,4 +1,3 @@
-import { Provide } from './../generated/DAOContract/LPContract';
 import { Deposit, Unbond, Withdraw,   Contract,
   Advance,
   CouponExpiration,
@@ -16,7 +15,8 @@ import { BigInt, Address, ethereum } from "@graphprotocol/graph-ts"
 import {
   LPContract,
   Bond as LPBond,
-  Unbond as LPUnbond
+  Unbond as LPUnbond,
+  Provide
 } from "../generated/DAOContract/LPContract"
 import {
   DollarContract,
@@ -171,7 +171,7 @@ export function handleCouponExpiration(event: CouponExpiration): void {
   stats.frozen = stats.frozen.plus(event.params.newBonded);
   stats.save();  
 
-  // 
+  // @TODO: Add to EpochSnapshots LP Epoch Stats
 
 }
 
@@ -435,8 +435,6 @@ export function handleVote(event: Vote): void {
 
 
 
-export function handleDepostLP1(event: L)
-
 export function handleDepositLP(event: Deposit): void {
   let contract = Contract.bind(DOLLAR_DAO_CONTRACT)
   let epoch = contract.epoch()
@@ -616,6 +614,7 @@ export function getStats(epoch: BigInt, cat: string, event: string): BalanceStat
   return stats;
 }
 
+// not sure about this one
 export function getBondedLP(address: Address): BigInt {
   let lpContract1 = LPContract.bind(POOL_1_ADDRESS);
   let lpContract2 = LPContract.bind(POOL_2_ADDRESS)
@@ -635,6 +634,7 @@ export function getBondedLP(address: Address): BigInt {
   return result;
 }
 
+// not sure about this one
 export function getStagedLP(address: Address): BigInt {
   let lpContract1 = LPContract.bind(POOL_1_ADDRESS);
   let lpContract2 = LPContract.bind(POOL_2_ADDRESS)
