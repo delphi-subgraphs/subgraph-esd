@@ -1,88 +1,80 @@
-type Epoch @entity {
+type EpochSnapshot @entity {
   id: ID!
-  startDAOTotalBonded: BigInt
-  startDAOTotalStaged: BigInt
-  startTotalDebt: BigInt
-  startTotalRedeemable: BigInt
-  startTotalCoupons: BigInt
-  startTotalNet: BigInt
-
-  startTotalLPESD: BigInt
-  startTotalLPTokens: BigInt
-
-  startLPTotalBondedTokens: BigInt
-  startLPTotalStagedTokens: BigInt
-  startLPTotalBondedESD: BigInt
-  startLPTotalStagedESD: BigInt
-
-  startTimestamp: BigInt
-  startBlock: BigInt
+  epoch: BigInt
+  timestamp: BigInt
 
   expiredCoupons: BigInt
   outstandingCoupons: BigInt
   couponsExpiration: BigInt
-
   oraclePrice: BigInt
-  deltaSupply: BigInt
-
   bootstrappingAt: Boolean
+
+  daoBondedTotal: BigInt
+  daoBondedFrozen: BigInt
+  daoBondedFluid: BigInt
+  daoBondedLocked: BigInt
+
+  daoStagedTotal: BigInt
+  daoStagedFrozen: BigInt
+  daoStagedFluid: BigInt
+  daoStagedLocked: BigInt
+
+  lpBondedTotal: BigInt
+  lpBondedFrozen: BigInt
+  lpBondedFluid: BigInt
+  lpBondedLocked: BigInt
+
+  lpStagedTotal: BigInt
+  lpStagedFrozen: BigInt
+  lpStagedFluid: BigInt
+  lpStagedLocked: BigInt
+
+  lpClaimableTotal: BigInt
+  lpClaimableFrozen: BigInt
+  lpClaimableFluid: BigInt
+  lpClaimableLocked: BigInt
+
+  lpRewardedTotal: BigInt
+}
+
+type FutureClaimableEsd @entity {
+  id: ID!
+  epoch: Epoch
+  daoClaimableTotal: BigInt
+  lpClaimableTotal: BigInt
+}
+
+type EsdSupplyHistory @entity {
+  id: ID!
+  epoch: BigInt
+  daoLockedTotal: BigInt
+  lpLockedTotal: BigInt
+  totalSupply: BigInt
 }
 
 type LpTokenHistory @entity {
   id: ID!
-  epoch: Epoch
+  epoch: BigInt
   totalStaged: BigInt
   totalBonded: BigInt
   totalSupply: BigInt
 }
 
-type EsdSupplyHistory @entity {
-  id: ID!
-  epoch: Epoch
-  lockedViaDAO: BigInt
-  lockedViaLP: BigInt
-  totalSupply: BigInt
-}
-
-type BalanceStats @entity {
-  id: ID!
-  total: BigInt!
-  frozen: BigInt!
-  fluid: BigInt!
-  locked: BigInt!
-  delta: BigInt!
-}
-
-type DAOBalance @entity {
-  id: ID!
-  bonded: BalanceStats
-  staged: BalanceStats
-}
-
-type LPBalance @entity {
-  id: ID!
-  bonded: BalanceStats
-  staged: BalanceStats
-  reward: BalanceStats
-  claimable: BigInt
-}
-
-type EpochSnapshot @entity {
-  id: ID!
-  epoch: BigInt
-  timestamp: BigInt
-  dao: DAOBalance
-  lp: LPBalance
-}
-
-type FutureClaimableESD @entity {
-  id: ID!
-  epoch: Epoch
-  daoClaimable: BigInt
-  lpClaimable: BigInt
-}
-
 type AddressInfo @entity {
   id: ID!
-  
+  esdBalance: BigInt
+
+  lpTotalBalance: BigInt
+  lpBonded
+  lpStaged
+  lpRewarded
+  lpStatus
+  lpLockedUntilEpoch
+
+  daoClaimable
+  daoBonded
+  daoStaged
+  daoStatus
+  daoLockedUntilEpoch
 }
+

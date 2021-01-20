@@ -1,16 +1,31 @@
-import { Deposit, Unbond, Withdraw,   Contract,
-  Advance,
-  CouponExpiration,
-  CouponPurchase,
-  CouponRedemption,
-  SupplyDecrease,
-  SupplyIncrease,
-  SupplyNeutral,
-  Vote,
-  Bond } from './../generated/DAOContract/Contract';
+import { BigInt, Address, ethereum, log } from "@graphprotocol/graph-ts"
 
-import { EpochSnapshot, DAOBalance, BalanceStats, LPBalance } from './../generated/schema';
-import { BigInt, Address, ethereum } from "@graphprotocol/graph-ts"
+import { 
+  EpochSnapshot, 
+  EsdSupplyHistory,
+  LpTokenHistory
+} from './../generated/schema';
+
+import { 
+  DollarContract ,
+  Transfer as DollarTransfer
+} from "../generated/DAOContract/DollarContract"
+
+import {
+  DaoContract,
+  Advance as DaoAdvance,
+  Deposit as DaoDeposit,
+  Withdraw as DaoWithdraw,
+  Bond as DaoBond  
+  Unbond as DaoUnbond,
+  CouponExpiration as DaoCouponExpiration,
+  CouponPurchase as DaoCouponPurchase,
+  CouponRedemption as DaoCouponRedemption,
+  SupplyDecrease as DaoSupplyDecrease,
+  SupplyIncrease as DaoSupplyIncrease,
+  SupplyNeutral as DaoSupplyNeutral,
+  Vote as DaoVote
+} from './../generated/DAOContract/Contract';
 
 import {
   LPContract,
@@ -18,147 +33,101 @@ import {
   Unbond as LPUnbond,
   Provide
 } from "../generated/DAOContract/LPContract"
-import {
-  DollarContract,
-} from "../generated/DAOContract/DollarContract"
-import {
-  UniswapV2PairContract,
-} from "../generated/DAOContract/UniswapV2PairContract"
-import { Epoch, LpTokenHistory, EsdSupplyHistory } from "../generated/schema"
-import { log } from '@graphprotocol/graph-ts'
+
+import UniswapV2PairContract from "../generated/DAOContract/UniswapV2PairContract"
+
+import { ContractAddresses } from './constants'
+
+/*
+ *** CONSTANTS
+ */
+
+let ADDRESS_ZERO_HEX = '0x0000000000000000000000000000000000000000'
 
 // epochs needed to expire the coupons
 let COUPON_EXPIRATION = BigInt.fromI32(90)
 
-// Uniswap Pool
-let UNISWAP_PAIR_CONTRACT_ADDRESS = Address.fromString('0x88ff79eb2bc5850f27315415da8685282c7610f9')
+/*
+ *** DOLLAR
+ */
+handleDollarTransfer(event: DollarTransfer): void {
+  let transferFrom = event.params.from
+  let transferTo = event.params.to
+  let transferAmount = event.params.value
 
-// Dollar ERC20 Contract
-let DOLLAR_CONTRACT_ADDRESS = Address.fromString('36F3FD68E7325a35EB768F1AedaAe9EA0689d723')
+  // Deduct amount from sender
+  if(transferFrom.toHexString() != ADDRESS_ZERO_HEX) {
+    let fromAddressInfo = AddressInfo.load(transferFrom.toHexString())
+    if (fromAddressInfo == null) {
+      log.error(
+        '[{}]: Got transfer from previously non existing address {}',
+        [event.block.number.toString(), transferFrom.toHexString()]
+      )
+    } else if (fromAddressInfo == null) {
+      log.error(
+        '[{}]: Got transfer from address {} with insuficient funds value is {} balance is {}',
+        [
+          event.block.number.toString(),
+          transferFrom.toHexString()
+          transferAmount.toString()
+          fromAddress.esdBalance.toString()
+        ]
+      )
+    }
 
-// Dollar DAO Contract
-let DOLLAR_DAO_CONTRACT = Address.fromString('443D2f2755DB5942601fa062Cc248aAA153313D3');
-
-// LP Pools
-let POOL_1_ADDRESS = Address.fromString("0xdF0Ae5504A48ab9f913F8490fBef1b9333A68e68")
-let POOL_2_ADDRESS = Address.fromString("0xA5976897BC0081e3895013B08654DfEc50Bcb33F")
-let POOL_3_ADDRESS = Address.fromString("0xBBDA9B2f267b94147cB5b51653237C2F1EE69054")
-let POOL_4_ADDRESS = Address.fromString("0x4082D11E506e3250009A991061ACd2176077C88f")
-
-export function handleAdvance(event: Advance): void {
-  let epochId = event.params.epoch.toString()
-
-  // init new Epoch
-  let epoch = new Epoch(epochId);
-
-  // set meta data
-  epoch.startTimestamp = event.params.timestamp
-  epoch.startBlock = event.params.block
-  let contract = Contract.bind(DOLLAR_DAO_CONTRACT)
-  epoch.startDAOTotalBonded = contract.totalBonded()
-  epoch.startDAOTotalStaged = contract.totalStaged()
-  epoch.startTotalDebt = contract.totalDebt()
-  epoch.startTotalRedeemable = contract.totalRedeemable()
-  epoch.startTotalCoupons = contract.totalCoupons()
-  epoch.startTotalNet = contract.totalNet()
-  epoch.bootstrappingAt = contract.bootstrappingAt(event.params.epoch)
-  epoch.couponsExpiration = event.params.epoch + COUPON_EXPIRATION
-
-  let poolStakingAddress = contract.pool() 
-
-  let startLPTotalBondedTokens = BigInt.fromI32(0)
-  let startLPTotalStagedTokens = BigInt.fromI32(0)
-  if(poolStakingAddress) {
-    let lpContract = LPContract.bind(poolStakingAddress)
-    startLPTotalBondedTokens = lpContract.totalBonded()
-    startLPTotalStagedTokens = lpContract.totalStaged()
+    fromAddressInfo.esdBalance -= transferAmount
   }
 
-  let dollarContract = DollarContract.bind(DOLLAR_CONTRACT_ADDRESS)
-  let startTotalLPESD = dollarContract.balanceOf(UNISWAP_PAIR_CONTRACT_ADDRESS)
-  let totalSupplyESD = dollarContract.totalSupply()
-  let startTotalDAOESD = dollarContract.balanceOf(DOLLAR_DAO_CONTRACT);
+  // Add amount to receiver
+  if(transferTo.toHexString() != ADDRESS_ZERO_HEX) {
+    let toAddressInfo = AddressInfo.load(transferTo.toHexString())
+    if (toAddressInfo == null) {
+      toAddressInfo = new AddressInfo(transferTo.toHexString)
+      toAddressInfo.esdBalance = 0
+    }
 
-  let uniswapContract = UniswapV2PairContract.bind(UNISWAP_PAIR_CONTRACT_ADDRESS)
-  let startTotalLPTokens = uniswapContract.totalSupply()
-
-  if(startTotalLPTokens > BigInt.fromI32(0)) {
-    epoch.startLPTotalBondedESD = (startLPTotalBondedTokens * startTotalLPESD) / startTotalLPTokens
-    epoch.startLPTotalStagedESD = (startLPTotalStagedTokens * startTotalLPESD) / startTotalLPTokens
+    toAddressInfo.esdBalance += transferAmount
   }
-
-  epoch.startLPTotalStagedTokens = startLPTotalStagedTokens
-  epoch.startLPTotalBondedTokens = startLPTotalBondedTokens
-  epoch.startTotalLPTokens = startTotalLPTokens
-  epoch.startTotalLPESD = startTotalLPESD
-  epoch.save()
-
-  // get history for previous epoch
-  if(event.params.epoch.toString() != "1") {
-    let previousEpoch = event.params.epoch.minus(BigInt.fromI32(1));
-    let tokenhistory = new LpTokenHistory(previousEpoch.toString())
-    tokenhistory.epoch = previousEpoch.toString()
-    tokenhistory.id = previousEpoch.toString()
-    tokenhistory.totalStaged = startLPTotalStagedTokens
-    tokenhistory.totalBonded = startLPTotalBondedTokens
-    tokenhistory.totalSupply = startTotalLPTokens
-    tokenhistory.save()
-  
-    let esdSupplyHistory = new EsdSupplyHistory(previousEpoch.toString())
-    esdSupplyHistory.epoch = previousEpoch.toString()
-    esdSupplyHistory.id = previousEpoch.toString()
-    esdSupplyHistory.totalSupply = totalSupplyESD
-    esdSupplyHistory.lockedViaLP = startTotalLPESD
-    esdSupplyHistory.lockedViaDAO = startTotalDAOESD
-    esdSupplyHistory.save()
-  }
-  // Init Stats for new Epoch
-  let bondedDAO = getStats(event.params.epoch, "dao", "bonded");
-  bondedDAO.total = contract.totalBonded();
-
-  // Release vote locked after 9 epochs
-  if(event.params.epoch.gt(BigInt.fromI32(9)) && bondedDAO.locked.gt(BigInt.fromI32(0))) {
-    let lockedStats1 = BalanceStats.load("dao-" + event.params.epoch.minus(BigInt.fromI32(10)).toString() + "-bonded");
-    let lockedStats2 = BalanceStats.load("dao-" + event.params.epoch.minus(BigInt.fromI32(9)).toString() + "-bonded");
-    let diff = lockedStats2.locked.minus(lockedStats1.locked)
-    bondedDAO.locked = bondedDAO.locked.minus(diff)
-    bondedDAO.frozen = bondedDAO.frozen.plus(diff)
-  }
-
-  bondedDAO.save()
-  let stagedDAO = getStats(event.params.epoch, "dao", "staged");
-  stagedDAO.total = contract.totalStaged();
-  stagedDAO.save()
-  let bondedLP = getStats(event.params.epoch, "lp", "bonded");
-  let stagedLP = getStats(event.params.epoch, "lp", "staged");
-
-  // Create Datamodell based on Schema
-  let daoBalance = new DAOBalance(epochId);
-  daoBalance.id = epochId;
-  daoBalance.bonded = "dao-" + epochId + "-bonded";
-  daoBalance.staged = "dao-" + epochId + "-staged";
-  daoBalance.save();
-
-  let lpBalance = new LPBalance(epochId);
-  lpBalance.id = epochId;
-  lpBalance.bonded = "lp-" + epochId + "-bonded";
-  lpBalance.staged = "lp-" + epochId + "-staged";
-  lpBalance.save();
-
-  // init epoch new snapshot
-  let epochSnapShots = new EpochSnapshot(epochId);
-  epochSnapShots.id = epochId
-  epochSnapShots.epoch = event.params.epoch;
-  epochSnapShots.timestamp = event.params.timestamp;
-  epochSnapShots.dao = epochId;
-  epochSnapShots.lp = epochId;
-  epochSnapShots.save();
 }
 
-/**
- * increaseSupply(lessRedeemable);
- * @param event 
+
+/*
+ *** DAO
  */
+export function handleDaoAdvance(event: Advance): void {
+  // set epoch timestamp
+  let epoch = event.params.epoch
+  let epochSnapshot = new EpochSnapshot(epoch.toString())
+  epochSnapshot.epoch = epoch
+  epochSnapshot.timestamp = event.params.timestamp
+  epochSnapshot.save()
+
+  // Fill in balances for history entities
+  // Values at the end of the epoch (begining of the next one) are taken
+  if(epoch > BigInt.fromI32(1)) {
+    let historyEpoch =  epoch - 1
+
+    let dollarContract = DollarContract.bind(ContractAddresses.esdDollar)
+    let totalSupplyEsd = dollarContract.totalSupply()
+    let totalLpEsd = dollarContract.balanceOf(ContractAddresses.uniswapPair)
+    let totalDaoEsd = dollarContract.balanceOf(ContractAddresses.esdDao);
+    let esdSupplyHistory = new EsdSupplyHistory(historyEpoch.toString())
+    esdSupplyHistory.epoch = historyEpoch
+    esdSupplyHistory.daoLockedTotal = totalDaoEsd 
+    esdSupplyHistory.lpLockedTotal = totalDaoEsd 
+    esdSupplyHistory.totalSupply = totalSuplyEsd
+
+    let uniswapContract = UniswapV2PairContract.bind(ContractAddresses.uniswapPair)
+    let totalLpTokens = uniswapContract.totalSupply()
+    let lpTokenHistory = new lpTokenHistory(historyEpoch.toString())
+    lpTokenHistory.epoch = historyEpoch
+    lpTokenHistory.totalSuppy = totalLpTokens
+  }
+}
+
+export function daoHandleBond(event: Bond): void {
+}
+
 export function handleCouponExpiration(event: CouponExpiration): void {
   let epochId = event.params.epoch.toString()
   let epoch = new Epoch(epochId)
@@ -175,10 +144,6 @@ export function handleCouponExpiration(event: CouponExpiration): void {
 
 }
 
-/**
- * burnFromAccount(msg.sender, dollarAmount);
- * @param event 
- */
 export function handleCouponPurchase(event: CouponPurchase): void {
   let epochId = event.params.epoch.toString()
   let epoch = Epoch.load(epochId)
@@ -582,74 +547,4 @@ export function handleProvideLP(event: Provide): void {
   balanceBonded.save()
 }
 
-export function getStats(epoch: BigInt, cat: string, event: string): BalanceStats | null {
-  let stats = BalanceStats.load(cat + "-" +epoch.toString() + "-" + event);
-  if(stats == null) {
-    stats = new BalanceStats(cat + "-" +epoch.toString() + "-" + event);
-  
-    // Start with 0 on First Epoch
-    if(epoch.toString() == "1") {
-      stats.total = BigInt.fromI32(0);
-      stats.frozen = BigInt.fromI32(0);
-      stats.fluid = BigInt.fromI32(0);
-      stats.locked = BigInt.fromI32(0);
-      stats.delta = BigInt.fromI32(0);
-      stats.save();
-      return stats;
-    }
 
-    // @TODO: lock = previousLock - lockFromEpoch-9
-
-    // move Fluid to Frozen on new Epoch
-    let previousStats = BalanceStats.load(cat + "-" + epoch.minus(BigInt.fromI32(1)).toString() + "-" + event);
-    stats.total = previousStats.total
-    stats.frozen = previousStats.frozen.plus(previousStats.fluid)
-    stats.fluid = BigInt.fromI32(0)
-    stats.locked = previousStats.locked
-
-    stats.delta = stats.total - (stats.frozen + stats.fluid + stats.locked)
-    stats.save();
-  }
-  
-  return stats;
-}
-
-// not sure about this one
-export function getBondedLP(address: Address): BigInt {
-  let lpContract1 = LPContract.bind(POOL_1_ADDRESS);
-  let lpContract2 = LPContract.bind(POOL_2_ADDRESS)
-  let lpContract3 = LPContract.bind(POOL_3_ADDRESS)
-  let lpContract4 = LPContract.bind(POOL_4_ADDRESS)
-  let result = BigInt.fromI32(0)
-  if(address.equals(POOL_4_ADDRESS)) {
-    result = result.plus(lpContract4.totalBonded()).plus(lpContract3.totalBonded()).plus(lpContract2.totalBonded()).plus(lpContract1.totalBonded())
-  } else if(address.equals(POOL_3_ADDRESS)) {
-    result = result.plus(lpContract3.totalBonded()).plus(lpContract2.totalBonded()).plus(lpContract1.totalBonded())
-  }else if(address.equals(POOL_2_ADDRESS)) {
-    result = result.plus(lpContract2.totalBonded()).plus(lpContract1.totalBonded())
-  }else if(address.equals(POOL_1_ADDRESS)){
-    result = result.plus(lpContract1.totalBonded())
-  }
-
-  return result;
-}
-
-// not sure about this one
-export function getStagedLP(address: Address): BigInt {
-  let lpContract1 = LPContract.bind(POOL_1_ADDRESS);
-  let lpContract2 = LPContract.bind(POOL_2_ADDRESS)
-  let lpContract3 = LPContract.bind(POOL_3_ADDRESS)
-  let lpContract4 = LPContract.bind(POOL_4_ADDRESS)
-  let result = BigInt.fromI32(0)
-  if(address.equals(POOL_4_ADDRESS)) {
-    result = result.plus(lpContract4.totalStaged()).plus(lpContract3.totalStaged()).plus(lpContract2.totalStaged()).plus(lpContract1.totalStaged())
-  } else if(address.equals(POOL_3_ADDRESS)) {
-    result = result.plus(lpContract3.totalStaged()).plus(lpContract2.totalStaged()).plus(lpContract1.totalStaged())
-  }else if(address.equals(POOL_2_ADDRESS)) {
-    result = result.plus(lpContract2.totalStaged()).plus(lpContract1.totalStaged())
-  }else {
-    result = result.plus(lpContract1.totalStaged())
-  }
-
-  return result;
-}
