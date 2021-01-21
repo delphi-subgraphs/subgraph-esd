@@ -94,7 +94,7 @@ handleDollarTransfer(event: DollarTransfer): void {
 /*
  *** DAO
  */
-export function handleDaoAdvance(event: Advance): void {
+export function handleDaoAdvance(event: DaoAdvance): void {
   // set epoch timestamp
   let epoch = event.params.epoch
   let epochSnapshot = new EpochSnapshot(epoch.toString())
@@ -107,22 +107,49 @@ export function handleDaoAdvance(event: Advance): void {
   if(epoch > BigInt.fromI32(1)) {
     let historyEpoch =  epoch - 1
 
+    // esdSupplyHistory
     let dollarContract = DollarContract.bind(ContractAddresses.esdDollar)
     let totalSupplyEsd = dollarContract.totalSupply()
     let totalLpEsd = dollarContract.balanceOf(ContractAddresses.uniswapPair)
     let totalDaoEsd = dollarContract.balanceOf(ContractAddresses.esdDao);
+
     let esdSupplyHistory = new EsdSupplyHistory(historyEpoch.toString())
     esdSupplyHistory.epoch = historyEpoch
     esdSupplyHistory.daoLockedTotal = totalDaoEsd 
     esdSupplyHistory.lpLockedTotal = totalDaoEsd 
     esdSupplyHistory.totalSupply = totalSuplyEsd
+    esdSupplyHistory.save()
 
+    // lpTokenHistory
+    let daoContract = DaoContract.bind(ContractAddress.esdDao)
     let uniswapContract = UniswapV2PairContract.bind(ContractAddresses.uniswapPair)
     let totalLpTokens = uniswapContract.totalSupply()
+    let totalLpBonded = BigInt.fromI32(0)
+    let totalLpStaged = BigInt.fromI32(0)
+    lpContractAddress = daoContract.pool()
+    if(lpContractAddress) {
+      let lpContractAddress = LPContract.bind(lpContractAddress)
+      totalLpBonded = lpContract.totalBonded()
+      totalLpStaged = lpContract.totalStaged()
+    }
+
     let lpTokenHistory = new lpTokenHistory(historyEpoch.toString())
     lpTokenHistory.epoch = historyEpoch
     lpTokenHistory.totalSuppy = totalLpTokens
+    lpTokenHistory.totalBonded = totalLpBonded
+    lpTokenHistory.totalStaged = totalLpStaged
   }
+}
+
+export function handleDaoDeposit(event: DaoDeposit): void {
+  let contract = Contract.bind(DOLLAR_DAO_CONTRACT)
+  let epoch = contract.epoch()
+
+  let balanceStaged = getStats(epoch, "dao", "staged")
+  balanceStaged.fluid = balanceStaged.fluid.plus(event.params.value);
+  balanceStaged.total =  contract.totalStaged()
+  balanceStaged.delta = balanceStaged.total - balanceStaged.frozen - balanceStaged.fluid - balanceStaged.locked
+  balanceStaged.save();
 }
 
 export function daoHandleBond(event: Bond): void {
@@ -244,20 +271,6 @@ export function handleSupplyNeutral(event: SupplyNeutral): void {
   // do nothing?
 }
 
-/**
- * incrementBalanceOfStaged(msg.sender, value);
- * @param event 
- */
-export function handleDeposit(event: Deposit): void {
-  let contract = Contract.bind(DOLLAR_DAO_CONTRACT)
-  let epoch = contract.epoch()
-
-  let balanceStaged = getStats(epoch, "dao", "staged")
-  balanceStaged.fluid = balanceStaged.fluid.plus(event.params.value);
-  balanceStaged.total =  contract.totalStaged()
-  balanceStaged.delta = balanceStaged.total - balanceStaged.frozen - balanceStaged.fluid - balanceStaged.locked
-  balanceStaged.save();
-}
 
 /**
  * decrementBalanceOfStaged(msg.sender, value, "Bonding: insufficient staged balance");
