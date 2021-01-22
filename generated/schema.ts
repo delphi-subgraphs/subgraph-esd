@@ -295,6 +295,73 @@ export class EpochSnapshot extends Entity {
   }
 }
 
+export class FundsToBeFrozen extends Entity {
+  constructor(id: string) {
+    super();
+    this.set("id", Value.fromString(id));
+  }
+
+  save(): void {
+    let id = this.get("id");
+    assert(id !== null, "Cannot save FundsToBeFrozen entity without an ID");
+    assert(
+      id.kind == ValueKind.STRING,
+      "Cannot save FundsToBeFrozen entity with non-string ID. " +
+        'Considering using .toHex() to convert the "id" to a string.'
+    );
+    store.set("FundsToBeFrozen", id.toString(), this);
+  }
+
+  static load(id: string): FundsToBeFrozen | null {
+    return store.get("FundsToBeFrozen", id) as FundsToBeFrozen | null;
+  }
+
+  get id(): string {
+    let value = this.get("id");
+    return value.toString();
+  }
+
+  set id(value: string) {
+    this.set("id", Value.fromString(value));
+  }
+
+  get epoch(): BigInt {
+    let value = this.get("epoch");
+    return value.toBigInt();
+  }
+
+  set epoch(value: BigInt) {
+    this.set("epoch", Value.fromBigInt(value));
+  }
+
+  get daoFluidToFrozen(): BigInt {
+    let value = this.get("daoFluidToFrozen");
+    return value.toBigInt();
+  }
+
+  set daoFluidToFrozen(value: BigInt) {
+    this.set("daoFluidToFrozen", Value.fromBigInt(value));
+  }
+
+  get daoLockedToFrozen(): BigInt {
+    let value = this.get("daoLockedToFrozen");
+    return value.toBigInt();
+  }
+
+  set daoLockedToFrozen(value: BigInt) {
+    this.set("daoLockedToFrozen", Value.fromBigInt(value));
+  }
+
+  get lpFluidToFrozen(): BigInt {
+    let value = this.get("lpFluidToFrozen");
+    return value.toBigInt();
+  }
+
+  set lpFluidToFrozen(value: BigInt) {
+    this.set("lpFluidToFrozen", Value.fromBigInt(value));
+  }
+}
+
 export class FutureClaimableEsd extends Entity {
   constructor(id: string) {
     super();
@@ -526,6 +593,51 @@ export class AddressInfo extends Entity {
     this.set("esdBalance", Value.fromBigInt(value));
   }
 
+  get daoClaimable(): BigInt {
+    let value = this.get("daoClaimable");
+    return value.toBigInt();
+  }
+
+  set daoClaimable(value: BigInt) {
+    this.set("daoClaimable", Value.fromBigInt(value));
+  }
+
+  get daoBonded(): BigInt {
+    let value = this.get("daoBonded");
+    return value.toBigInt();
+  }
+
+  set daoBonded(value: BigInt) {
+    this.set("daoBonded", Value.fromBigInt(value));
+  }
+
+  get daoStaged(): BigInt {
+    let value = this.get("daoStaged");
+    return value.toBigInt();
+  }
+
+  set daoStaged(value: BigInt) {
+    this.set("daoStaged", Value.fromBigInt(value));
+  }
+
+  get daoLockedUntilEpoch(): BigInt {
+    let value = this.get("daoLockedUntilEpoch");
+    return value.toBigInt();
+  }
+
+  set daoLockedUntilEpoch(value: BigInt) {
+    this.set("daoLockedUntilEpoch", Value.fromBigInt(value));
+  }
+
+  get daoFluidUntilEpoch(): BigInt {
+    let value = this.get("daoFluidUntilEpoch");
+    return value.toBigInt();
+  }
+
+  set daoFluidUntilEpoch(value: BigInt) {
+    this.set("daoFluidUntilEpoch", Value.fromBigInt(value));
+  }
+
   get lpTotalBalance(): BigInt {
     let value = this.get("lpTotalBalance");
     return value.toBigInt();
@@ -562,66 +674,12 @@ export class AddressInfo extends Entity {
     this.set("lpRewarded", Value.fromBigInt(value));
   }
 
-  get lpStatus(): string {
-    let value = this.get("lpStatus");
-    return value.toString();
-  }
-
-  set lpStatus(value: string) {
-    this.set("lpStatus", Value.fromString(value));
-  }
-
-  get lpLockedUntilEpoch(): BigInt {
-    let value = this.get("lpLockedUntilEpoch");
+  get lpFluidUntilEpoch(): BigInt {
+    let value = this.get("lpFluidUntilEpoch");
     return value.toBigInt();
   }
 
-  set lpLockedUntilEpoch(value: BigInt) {
-    this.set("lpLockedUntilEpoch", Value.fromBigInt(value));
-  }
-
-  get daoClaimable(): BigInt {
-    let value = this.get("daoClaimable");
-    return value.toBigInt();
-  }
-
-  set daoClaimable(value: BigInt) {
-    this.set("daoClaimable", Value.fromBigInt(value));
-  }
-
-  get daoBonded(): BigInt {
-    let value = this.get("daoBonded");
-    return value.toBigInt();
-  }
-
-  set daoBonded(value: BigInt) {
-    this.set("daoBonded", Value.fromBigInt(value));
-  }
-
-  get daoStaged(): BigInt {
-    let value = this.get("daoStaged");
-    return value.toBigInt();
-  }
-
-  set daoStaged(value: BigInt) {
-    this.set("daoStaged", Value.fromBigInt(value));
-  }
-
-  get daoStatus(): string {
-    let value = this.get("daoStatus");
-    return value.toString();
-  }
-
-  set daoStatus(value: string) {
-    this.set("daoStatus", Value.fromString(value));
-  }
-
-  get daoLockedUntilEpoch(): BigInt {
-    let value = this.get("daoLockedUntilEpoch");
-    return value.toBigInt();
-  }
-
-  set daoLockedUntilEpoch(value: BigInt) {
-    this.set("daoLockedUntilEpoch", Value.fromBigInt(value));
+  set lpFluidUntilEpoch(value: BigInt) {
+    this.set("lpFluidUntilEpoch", Value.fromBigInt(value));
   }
 }

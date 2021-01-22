@@ -37,6 +37,14 @@ type EpochSnapshot @entity {
   lpRewardedTotal: BigInt!
 }
 
+type FundsToBeFrozen @entity {
+  id: ID!
+  epoch: BigInt!
+  daoFluidToFrozen: BigInt!
+  daoLockedToFrozen: BigInt!
+  lpFluidToFrozen: BigInt!
+}
+
 type FutureClaimableEsd @entity {
   id: ID!
   epoch: BigInt!
@@ -60,27 +68,20 @@ type LpTokenHistory @entity {
   totalSupply: BigInt!
 }
 
-enum AccountStatus {
-  Frozen
-  Fluid
-  Locked
-}
-
 type AddressInfo @entity {
   id: ID!
   esdBalance: BigInt!
+
+  daoClaimable: BigInt!
+  daoBonded: BigInt!
+  daoStaged: BigInt!
+  daoLockedUntilEpoch: BigInt!
+  daoFluidUntilEpoch: BigInt!
 
   lpTotalBalance: BigInt!
   lpBonded: BigInt!
   lpStaged: BigInt!
   lpRewarded: BigInt!
-  lpStatus: AccountStatus!
-  lpLockedUntilEpoch: BigInt!
-
-  daoClaimable: BigInt!
-  daoBonded: BigInt!
-  daoStaged: BigInt!
-  daoStatus: AccountStatus!
-  daoLockedUntilEpoch: BigInt!
+  lpFluidUntilEpoch: BigInt!
 }
 

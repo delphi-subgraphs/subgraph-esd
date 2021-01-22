@@ -56,25 +56,25 @@ dataSources:
         - event: Advance(indexed uint256,uint256,uint256)
           handler: handleDaoAdvance
         - event: Deposit(indexed address,uint256)
-          handler: daoHandleDeposit
+          handler: handleDaoDeposit
         - event: Withdraw(indexed address,uint256)
-          handler: daoHandleWithdraw
+          handler: handleDaoWithdraw
         - event: Bond(indexed address,uint256,uint256,uint256)
-          handler: daoHandleBond
+          handler: handleDaoBond
         - event: Unbond(indexed address,uint256,uint256,uint256)
-          handler: daoHandleUnbond
+          handler: handleDaoUnbond
         - event: Vote(indexed address,indexed address,uint8,uint256)
           handler: daoHandleVote
         - event: CouponExpiration(indexed uint256,uint256,uint256,uint256,uint256)
-          handler: handleCouponExpiration
+          handler: handleDaoCouponExpiration
         - event: CouponPurchase(indexed address,indexed uint256,uint256,uint256)
-          handler: handleCouponPurchase
+          handler: handleDaoCouponPurchase
         - event: CouponRedemption(indexed address,indexed uint256,uint256)
-          handler: handleCouponRedemption
+          handler: handleDaoCouponRedemption
         - event: SupplyDecrease(indexed uint256,uint256,uint256)
-          handler: handleSupplyDecrease
+          handler: handleDaoSupplyDecrease
         - event: SupplyIncrease(indexed uint256,uint256,uint256,uint256,uint256)
-          handler: handleSupplyIncrease
+          handler: handleDaoSupplyIncrease
         - event: SupplyNeutral(indexed uint256)
-          handler: handleSupplyNeutral
+          handler: handleDaoSupplyNeutral
       file: ./src/mapping.ts

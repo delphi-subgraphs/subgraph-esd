@@ -33,25 +33,19 @@ import {
 import { LPContract } from '../generated/DAOContract/LPContract'
 import { UniswapV2PairContract } from '../generated/DAOContract/UniswapV2PairContract'
 
+import { ContractAddresses } from './constants'
 
 /*
  *** CONSTANTS
  */
 
 let ADDRESS_ZERO_HEX = '0x0000000000000000000000000000000000000000'
-let ADDRESS_UNISWAP_PAIR = Address.fromString('0x88ff79eb2bc5850f27315415da8685282c7610f9')
-let ADDRESS_ESD_DOLLAR = Address.fromString('0x36F3FD68E7325a35EB768F1AedaAe9EA0689d723')
-let ADDRESS_ESD_DAO = Address.fromString('0x443D2f2755DB5942601fa062Cc248aAA153313D3')
-let ADDRESS_ESD_LP1 = Address.fromString('0xdF0Ae5504A48ab9f913F8490fBef1b9333A68e68')
-let ADDRESS_ESD_LP2 = Address.fromString('0xA5976897BC0081e3895013B08654DfEc50Bcb33F')
-let ADDRESS_ESD_LP3 = Address.fromString('0xBBDA9B2f267b94147cB5b51653237C2F1EE69054')
-let ADDRESS_ESD_LP4 = Address.fromString('0x4082D11E506e3250009A991061ACd2176077C88f')
 
 // epochs needed to expire the coupons
 let DAO_COUPON_EXPIRATION = BigInt.fromI32(90)
 
 // epochs an account stays fluid after bond/unbond
-let DAO_EXIT_LOCKUP_EPOCHS = BigInt.fromI32(15)
+let DAO_EXIT_LOCKUP_EPOCHS = 15
 
 /*
  *** DOLLAR
@@ -71,7 +65,7 @@ export function handleDollarTransfer(event: DollarTransfer): void {
           event.block.number.toString(),
           transferFrom.toHexString(),
           transferAmount.toString(),
-          fromAddressInfo.esdBalance.toString()
+          fromAddress.esdBalance.toString()
         ]
       )
     }
@@ -83,7 +77,7 @@ export function handleDollarTransfer(event: DollarTransfer): void {
   if(transferTo.toHexString() != ADDRESS_ZERO_HEX) {
     let toAddressInfo = AddressInfo.load(transferTo.toHexString())
     if (toAddressInfo == null) {
-      toAddressInfo = addressInfoNew(transferTo.toHexString())
+      toAddressInfo = addressInfoNew(transferTo.toHexString)
     }
 
     toAddressInfo.esdBalance += transferAmount
@@ -113,30 +107,30 @@ export function handleDaoAdvance(event: DaoAdvance): void {
   // (or a singleton entity that has all aggregates), but lets
   // leave these for now to benchmark the aggregate values
   if(epoch > BigInt.fromI32(1)) {
-    let historyEpoch =  epoch - BigInt.fromI32(1)
+    let historyEpoch =  epoch - 1
 
     // esdSupplyHistory
-    let dollarContract = DollarContract.bind(ADDRESS_ESD_DOLLAR)
+    let dollarContract = DollarContract.bind(ContractAddresses.esdDollar)
     let totalSupplyEsd = dollarContract.totalSupply()
-    let totalLpEsd = dollarContract.balanceOf(ADDRESS_UNISWAP_PAIR)
-    let totalDaoEsd = dollarContract.balanceOf(ADDRESS_ESD_DAO);
+    let totalLpEsd = dollarContract.balanceOf(ContractAddresses.uniswapPair)
+    let totalDaoEsd = dollarContract.balanceOf(ContractAddresses.esdDao);
 
     let esdSupplyHistory = new EsdSupplyHistory(historyEpoch.toString())
     esdSupplyHistory.epoch = historyEpoch
     esdSupplyHistory.daoLockedTotal = totalDaoEsd 
     esdSupplyHistory.lpLockedTotal = totalDaoEsd 
-    esdSupplyHistory.totalSupply = totalSupplyEsd
+    esdSupplyHistory.totalSupply = totalSuplyEsd
     esdSupplyHistory.save()
 
     // lpTokenHistory
-    let daoContract = DaoContract.bind(ADDRESS_ESD_DAO)
-    let uniswapContract = UniswapV2PairContract.bind(ADDRESS_UNISWAP_PAIR)
+    let daoContract = DaoContract.bind(ContractAddress.esdDao)
+    let uniswapContract = UniswapV2PairContract.bind(ContractAddresses.uniswapPair)
     let totalLpTokens = uniswapContract.totalSupply()
     let totalLpBonded = BigInt.fromI32(0)
     let totalLpStaged = BigInt.fromI32(0)
-    let lpContractAddress = daoContract.pool()
+    lpContractAddress = daoContract.pool()
     if(lpContractAddress) {
-      let lpContract = LPContract.bind(lpContractAddress)
+      let lpContractAddress = LPContract.bind(lpContractAddress)
       totalLpBonded = lpContract.totalBonded()
       totalLpStaged = lpContract.totalStaged()
     }
@@ -197,47 +191,8 @@ export function handleDaoWithdraw(event: DaoWithdraw): void {
 export function handleDaoBond(event: DaoBond): void {
   let bondAddress = event.params.account
   let bondAmount = event.params.value
-
   let currentEpochSnapshot = epochSnapshotGetCurrent()
   let addressInfo = mustLoadAddressInfo(bondAddress, event.block, 'Bond')
-  let currentEpoch = currentEpochSnapshot.epoch
-
-  let previousAccountStatus = addressInfoDaoStatus(addressInfo, currentEpoch)
-  let fluidUntilEpoch = currentEpoch + DAO_EXIT_LOCKUP_EPOCHS
-
-  // Frozen/Fluid status: all account dao funds get (or stay) fluid
-  // Modify aggregated values accordingly
-  if(previousAccountStatus == 'fluid') {
-    // Account funds stay fluid
-    // Amount bonded moves from stagedFluid to bondedFluid
-    currentEpochSnapshot.daoStagedFluid -= bondAmount
-    currentEpochSnapshot.daoBondedFluid += bondAmount
-
-    // Account funds will freeze on a later epoch now
-    let previousFundsToBeFrozen = fundsToBeFrozenForEpoch(addressInfo.daoFluidUntilEpoch)
-    previousFundsToBeFrozen.daoFluidToFrozen -= (addressInfo.daoStaged + addressInfo.daoBonded)
-    previousFundsToBeFrozen.save()
-  } else {
-    // Account funds move from staged to fluid
-    currentEpochSnapshot.daoStagedFrozen -= addressInfo.daoStaged
-    currentEpochSnapshot.daoBondedFrozen -= addressInfo.daoBonded
-    currentEpochSnapshot.daoStagedFluid += (addressInfo.daoStaged - bondAmount)
-    currentEpochSnapshot.daoBondedFluid += (addressInfo.daoBonded + bondAmount)
-  }
-
-  // Staged/Bonded status: Amount goes from staged to bonded
-  currentEpochSnapshot.daoStagedTotal -= bondAmount
-  currentEpochSnapshot.daoBondedTotal += bondAmount
-  addressInfo.daoStaged -= bondAmount
-  addressInfo.daoBonded += bondAmount
-
-  // Funds will become frozen after lockup period
-  addressInfo.daoFluidUntilEpoch = fluidUntilEpoch
-  let fundsToBeFrozen = fundsToBeFrozenForEpoch(fluidUntilEpoch)
-  fundsToBeFrozen.daoFluidToFrozen += (addressInfo.daoStaged + addressInfo.daoBonded)
-
-  currentEpochSnapshot.save()
-  addressInfo.save()
 }
 
 export function handleDaoUnbond(event: DaoUnbond): void {
@@ -269,7 +224,7 @@ export function handleDaoSupplyNeutral(event: DaoSupplyNeutral): void {
 // Current Epoch snapshot has a special id "current" and holds all the aggregate values
 function epochSnapshotGetCurrent(): EpochSnapshot {
   let epochSnapshot = EpochSnapshot.load("current")
-  if (epochSnapshot == null) {
+  if (epochSnashot == null) {
     epochSnapshot = new EpochSnapshot("current")
     epochSnapshot.epoch = BigInt.fromI32(0)
     epochSnapshot.timestamp = BigInt.fromI32(0)
@@ -310,11 +265,11 @@ function epochSnapshotGetCurrent(): EpochSnapshot {
     epochSnapshot.save()
   }
 
-  return <EpochSnapshot>epochSnapshot
+  return epochSnapshot
 }
 
 function epochSnapshotCopyCurrent(currentEpochSnapshot: EpochSnapshot): void {
-  let epochSnapshot = new EpochSnapshot(currentEpochSnapshot.epoch.toString())
+  epochSnapshot = new EpochSnapshot(currentEpochSnapshot.epoch.toString())
   epochSnapshot.epoch = currentEpochSnapshot.epoch
   epochSnapshot.timestamp = currentEpochSnapshot.timestamp
 
@@ -355,21 +310,21 @@ function epochSnapshotCopyCurrent(currentEpochSnapshot: EpochSnapshot): void {
 }
 
 function fundsToBeFrozenForEpoch(epoch: BigInt): FundsToBeFrozen {
-  let fundsToBeFrozen = FundsToBeFrozen.load(epoch.toString())
+  fundsToBeFrozen = FundsToBeFrozen.load(epoch.toString())
 
   if(fundsToBeFrozen == null) {
     fundsToBeFrozen = new FundsToBeFrozen(epoch.toString())
     fundsToBeFrozen.epoch = epoch
-    fundsToBeFrozen.daoLockedToFrozen = BigInt.fromI32(0)
-    fundsToBeFrozen.daoFluidToFrozen = BigInt.fromI32(0)
-    fundsToBeFrozen.lpFluidToFrozen = BigInt.fromI32(0)
+    fundsToBeFrozen.daoLockedToFrozen = 0
+    fundsToBeFrozen.daoFluidToFrozen = 0
+    fundsToBeFrozen.lpFluidFrozen = 0
   }
 
-  return <FundsToBeFrozen>fundsToBeFrozen
+  return fundsToBeFrozen
 }
 
 function addressInfoNew(id: string): AddressInfo {
-  let addressInfo = new AddressInfo(id) 
+  addressInfo = new AddressInfo(id) 
 
   addressInfo.esdBalance = BigInt.fromI32(0)
 
@@ -402,8 +357,8 @@ function mustLoadAddressInfo(address: Address, block: ethereum.Block, operation:
   if(addressInfo == null) {
     log.critical(
       '[{}]: Got {} from previously non existing address {}',
-      [block.number.toString(), operation, address.toHexString()]
+      [event.block.number.toString(), operation, bondAddress.toHexString()]
     )
   }
-  return <AddressInfo>addressInfo
+  return addressInfo
 }
