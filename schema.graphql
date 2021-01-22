@@ -1,80 +1,86 @@
 type EpochSnapshot @entity {
   id: ID!
-  epoch: BigInt
-  timestamp: BigInt
+  epoch: BigInt!
+  timestamp: BigInt!
 
-  expiredCoupons: BigInt
-  outstandingCoupons: BigInt
-  couponsExpiration: BigInt
-  oraclePrice: BigInt
-  bootstrappingAt: Boolean
+  expiredCoupons: BigInt!
+  outstandingCoupons: BigInt!
+  couponsExpiration: BigInt!
+  oraclePrice: BigInt!
+  bootstrappingAt: Boolean!
 
-  daoBondedTotal: BigInt
-  daoBondedFrozen: BigInt
-  daoBondedFluid: BigInt
-  daoBondedLocked: BigInt
+  daoBondedTotal: BigInt!
+  daoBondedFrozen: BigInt!
+  daoBondedFluid: BigInt!
+  daoBondedLocked: BigInt!
 
-  daoStagedTotal: BigInt
-  daoStagedFrozen: BigInt
-  daoStagedFluid: BigInt
-  daoStagedLocked: BigInt
+  daoStagedTotal: BigInt!
+  daoStagedFrozen: BigInt!
+  daoStagedFluid: BigInt!
+  daoStagedLocked: BigInt!
 
-  lpBondedTotal: BigInt
-  lpBondedFrozen: BigInt
-  lpBondedFluid: BigInt
-  lpBondedLocked: BigInt
+  lpBondedTotal: BigInt!
+  lpBondedFrozen: BigInt!
+  lpBondedFluid: BigInt!
+  lpBondedLocked: BigInt!
 
-  lpStagedTotal: BigInt
-  lpStagedFrozen: BigInt
-  lpStagedFluid: BigInt
-  lpStagedLocked: BigInt
+  lpStagedTotal: BigInt!
+  lpStagedFrozen: BigInt!
+  lpStagedFluid: BigInt!
+  lpStagedLocked: BigInt!
 
-  lpClaimableTotal: BigInt
-  lpClaimableFrozen: BigInt
-  lpClaimableFluid: BigInt
-  lpClaimableLocked: BigInt
+  lpClaimableTotal: BigInt!
+  lpClaimableFrozen: BigInt!
+  lpClaimableFluid: BigInt!
+  lpClaimableLocked: BigInt!
 
-  lpRewardedTotal: BigInt
+  lpRewardedTotal: BigInt!
 }
 
 type FutureClaimableEsd @entity {
   id: ID!
-  epoch: Epoch
-  daoClaimableTotal: BigInt
-  lpClaimableTotal: BigInt
+  epoch: BigInt!
+  daoClaimableTotal: BigInt!
+  lpClaimableTotal: BigInt!
 }
 
 type EsdSupplyHistory @entity {
   id: ID!
-  epoch: BigInt
-  daoLockedTotal: BigInt
-  lpLockedTotal: BigInt
-  totalSupply: BigInt
+  epoch: BigInt!
+  daoLockedTotal: BigInt!
+  lpLockedTotal: BigInt!
+  totalSupply: BigInt!
 }
 
 type LpTokenHistory @entity {
   id: ID!
-  epoch: BigInt
-  totalStaged: BigInt
-  totalBonded: BigInt
-  totalSupply: BigInt
+  epoch: BigInt!
+  totalStaged: BigInt!
+  totalBonded: BigInt!
+  totalSupply: BigInt!
+}
+
+enum AccountStatus {
+  Frozen
+  Fluid
+  Locked
 }
 
 type AddressInfo @entity {
   id: ID!
-  esdBalance: BigInt
+  esdBalance: BigInt!
 
-  lpTotalBalance: BigInt
-  lpBonded
-  lpStaged
-  lpRewarded
-  lpStatus
-  lpLockedUntilEpoch
+  lpTotalBalance: BigInt!
+  lpBonded: BigInt!
+  lpStaged: BigInt!
+  lpRewarded: BigInt!
+  lpStatus: AccountStatus!
+  lpLockedUntilEpoch: BigInt!
 
-  daoClaimable
-  daoBonded
-  daoStaged
-  daoStatus
-  daoLockedUntilEpoch
+  daoClaimable: BigInt!
+  daoBonded: BigInt!
+  daoStaged: BigInt!
+  daoStatus: AccountStatus!
+  daoLockedUntilEpoch: BigInt!
 }
 
