@@ -197,9 +197,21 @@ export function handleDaoWithdraw(event: DaoWithdraw): void {
 export function handleDaoBond(event: DaoBond): void {
   let bondAddress = event.params.account
   let bondAmount = event.params.value
-
-  let currentEpochSnapshot = epochSnapshotGetCurrent()
   let addressInfo = mustLoadAddressInfo(bondAddress, event.block, 'Bond')
+  applyAccountDeltaBond(addressInfo, bondAmount)
+}
+
+export function handleDaoUnbond(event: DaoUnbond): void {
+  let unbondAddress = event.params.account
+  let unbondAmount = event.params.valueUnderlying.neg()
+  let addressInfo = mustLoadAddressInfo(unbondAddress, event.block, 'Unbond')
+  applyAccountDeltaBond(addressInfo, unbondAmount)
+}
+
+// Apply bond/unbond from account represented by AddressInfo
+// Positive amount means bond, Negative amount means unbond
+function applyAccountDeltaBond(addressInfo: AddressInfo, deltaBond: BigInt): void {
+  let currentEpochSnapshot = epochSnapshotGetCurrent()
   let currentEpoch = currentEpochSnapshot.epoch
 
   let previousAccountStatus = addressInfoDaoStatus(addressInfo, currentEpoch)
@@ -210,8 +222,8 @@ export function handleDaoBond(event: DaoBond): void {
   if(previousAccountStatus == 'fluid') {
     // Account funds stay fluid
     // Amount bonded moves from stagedFluid to bondedFluid
-    currentEpochSnapshot.daoStagedFluid -= bondAmount
-    currentEpochSnapshot.daoBondedFluid += bondAmount
+    currentEpochSnapshot.daoStagedFluid -= deltaBond
+    currentEpochSnapshot.daoBondedFluid += deltaBond
 
     // Account funds will freeze on a later epoch now
     let previousFundsToBeFrozen = fundsToBeFrozenForEpoch(addressInfo.daoFluidUntilEpoch)
@@ -221,15 +233,15 @@ export function handleDaoBond(event: DaoBond): void {
     // Account funds move from staged to fluid
     currentEpochSnapshot.daoStagedFrozen -= addressInfo.daoStaged
     currentEpochSnapshot.daoBondedFrozen -= addressInfo.daoBonded
-    currentEpochSnapshot.daoStagedFluid += (addressInfo.daoStaged - bondAmount)
-    currentEpochSnapshot.daoBondedFluid += (addressInfo.daoBonded + bondAmount)
+    currentEpochSnapshot.daoStagedFluid += (addressInfo.daoStaged - deltaBond)
+    currentEpochSnapshot.daoBondedFluid += (addressInfo.daoBonded + deltaBond)
   }
 
   // Staged/Bonded status: Amount goes from staged to bonded
-  currentEpochSnapshot.daoStagedTotal -= bondAmount
-  currentEpochSnapshot.daoBondedTotal += bondAmount
-  addressInfo.daoStaged -= bondAmount
-  addressInfo.daoBonded += bondAmount
+  currentEpochSnapshot.daoStagedTotal -= deltaBond
+  currentEpochSnapshot.daoBondedTotal += deltaBond
+  addressInfo.daoStaged -= deltaBond
+  addressInfo.daoBonded += deltaBond
 
   // Funds will become frozen after lockup period
   addressInfo.daoFluidUntilEpoch = fluidUntilEpoch
@@ -238,9 +250,6 @@ export function handleDaoBond(event: DaoBond): void {
 
   currentEpochSnapshot.save()
   addressInfo.save()
-}
-
-export function handleDaoUnbond(event: DaoUnbond): void {
 }
 
 export function handleDaoSupplyDecrease(event: DaoSupplyDecrease): void {
@@ -260,7 +269,6 @@ export function handleDaoSupplyNeutral(event: DaoSupplyNeutral): void {
   currentEpochSnapshot.oraclePrice = BigInt.fromI32(1).pow(18)
   currentEpochSnapshot.save()
 }
-
 
 /*
  *** HELPERS
