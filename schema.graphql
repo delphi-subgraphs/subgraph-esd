@@ -40,9 +40,12 @@ type EpochSnapshot @entity {
 type FundsToBeFrozen @entity {
   id: ID!
   epoch: BigInt!
-  daoFluidToFrozen: BigInt!
-  daoLockedToFrozen: BigInt!
-  lpFluidToFrozen: BigInt!
+  daoStagedFluidToFrozen: BigInt!
+  daoStagedLockedToFrozen: BigInt!
+  daoBondedFluidToFrozen: BigInt!
+  daoBondedLockedToFrozen: BigInt!
+  lpStagedFluidToFrozen: BigInt!
+  lpBondedFluidToFrozen: BigInt!
 }
 
 type FutureClaimableEsd @entity {

@@ -41,6 +41,7 @@ dataSources:
         - Withdraw
         - Bond
         - Unbond
+        - Vote
         - CouponExpiration
         - CouponPurchase
         - CouponRedemption
@@ -50,6 +51,10 @@ dataSources:
       abis:
         - name: DaoContract
           file: ./abis/DaoContract.json
+        - name: DollarContract
+          file: ./abis/DollarContract.json
+        - name: LpContract
+          file: ./abis/LpContract.json
         - name: UniswapV2PairContract
           file: ./abis/UniswapV2PairContract.json
       eventHandlers:
@@ -64,13 +69,7 @@ dataSources:
         - event: Unbond(indexed address,uint256,uint256,uint256)
           handler: handleDaoUnbond
         - event: Vote(indexed address,indexed address,uint8,uint256)
-          handler: daoHandleVote
-        - event: CouponExpiration(indexed uint256,uint256,uint256,uint256,uint256)
-          handler: handleDaoCouponExpiration
-        - event: CouponPurchase(indexed address,indexed uint256,uint256,uint256)
-          handler: handleDaoCouponPurchase
-        - event: CouponRedemption(indexed address,indexed uint256,uint256)
-          handler: handleDaoCouponRedemption
+          handler: handleDaoVote
         - event: SupplyDecrease(indexed uint256,uint256,uint256)
           handler: handleDaoSupplyDecrease
         - event: SupplyIncrease(indexed uint256,uint256,uint256,uint256,uint256)

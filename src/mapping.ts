@@ -20,9 +20,7 @@ import {
   Withdraw as DaoWithdraw,
   Bond as DaoBond,  
   Unbond as DaoUnbond,
-  CouponExpiration as DaoCouponExpiration,
-  CouponPurchase as DaoCouponPurchase,
-  CouponRedemption as DaoCouponRedemption,
+  Vote as DaoVote,
   SupplyDecrease as DaoSupplyDecrease,
   SupplyIncrease as DaoSupplyIncrease,
   SupplyNeutral as DaoSupplyNeutral,
@@ -30,7 +28,8 @@ import {
 } from '../generated/DAOContract/DAOContract'
 
 
-import { LPContract } from '../generated/DAOContract/LPContract'
+import { LpContract as DaoCallLpContract } from '../generated/DAOContract/LpContract'
+import { DollarContract as DaoCallDollarContract } from '../generated/DAOContract/DollarContract'
 import { UniswapV2PairContract } from '../generated/DAOContract/UniswapV2PairContract'
 
 
@@ -65,7 +64,7 @@ export function handleDollarTransfer(event: DollarTransfer): void {
   if(transferFrom.toHexString() != ADDRESS_ZERO_HEX) {
     let fromAddressInfo = mustLoadAddressInfo(transferFrom, event.block, 'Transfer')
     if (fromAddressInfo.esdBalance < transferAmount) {
-      log.critical(
+      log.error(
         '[{}]: Got transfer from address {} with insuficient funds value is {} balance is {}',
         [
           event.block.number.toString(),
@@ -77,6 +76,7 @@ export function handleDollarTransfer(event: DollarTransfer): void {
     }
 
     fromAddressInfo.esdBalance -= transferAmount
+    fromAddressInfo.save()
   }
 
   // Add amount to receiver
@@ -87,6 +87,7 @@ export function handleDollarTransfer(event: DollarTransfer): void {
     }
 
     toAddressInfo.esdBalance += transferAmount
+    toAddressInfo.save()
   }
 }
 
@@ -105,6 +106,20 @@ export function handleDaoAdvance(event: DaoAdvance): void {
   let epoch = event.params.epoch
   currentEpochSnapshot.epoch = epoch
   currentEpochSnapshot.timestamp = event.params.timestamp
+
+  // Compute amounts that go back to frozen state on the epoch
+  let fundsToBeFrozen = fundsToBeFrozenForEpoch(epoch)
+
+  currentEpochSnapshot.daoBondedFluid -= fundsToBeFrozen.daoBondedFluidToFrozen
+  currentEpochSnapshot.daoBondedLocked += fundsToBeFrozen.daoBondedLockedToFrozen
+  currentEpochSnapshot.daoBondedFrozen += (fundsToBeFrozen.daoBondedFluidToFrozen + fundsToBeFrozen.daoBondedLockedToFrozen)
+
+  currentEpochSnapshot.daoStagedFluid -= fundsToBeFrozen.daoStagedFluidToFrozen
+  currentEpochSnapshot.daoStagedLocked += fundsToBeFrozen.daoStagedLockedToFrozen
+  currentEpochSnapshot.daoStagedFrozen += (fundsToBeFrozen.daoStagedFluidToFrozen + fundsToBeFrozen.daoStagedLockedToFrozen)
+
+  // TODO(Fede): Compute LP amounts
+
   currentEpochSnapshot.save()
 
   // Fill in balances for history entities
@@ -116,7 +131,7 @@ export function handleDaoAdvance(event: DaoAdvance): void {
     let historyEpoch =  epoch - BigInt.fromI32(1)
 
     // esdSupplyHistory
-    let dollarContract = DollarContract.bind(ADDRESS_ESD_DOLLAR)
+    let dollarContract = DaoCallDollarContract.bind(ADDRESS_ESD_DOLLAR)
     let totalSupplyEsd = dollarContract.totalSupply()
     let totalLpEsd = dollarContract.balanceOf(ADDRESS_UNISWAP_PAIR)
     let totalDaoEsd = dollarContract.balanceOf(ADDRESS_ESD_DAO);
@@ -136,7 +151,7 @@ export function handleDaoAdvance(event: DaoAdvance): void {
     let totalLpStaged = BigInt.fromI32(0)
     let lpContractAddress = daoContract.pool()
     if(lpContractAddress) {
-      let lpContract = LPContract.bind(lpContractAddress)
+      let lpContract = DaoCallLpContract.bind(lpContractAddress)
       totalLpBonded = lpContract.totalBonded()
       totalLpStaged = lpContract.totalStaged()
     }
@@ -198,19 +213,19 @@ export function handleDaoBond(event: DaoBond): void {
   let bondAddress = event.params.account
   let bondAmount = event.params.value
   let addressInfo = mustLoadAddressInfo(bondAddress, event.block, 'Bond')
-  applyAccountDeltaBond(addressInfo, bondAmount)
+  applyAccountDaoDeltaBond(addressInfo, bondAmount)
 }
 
 export function handleDaoUnbond(event: DaoUnbond): void {
   let unbondAddress = event.params.account
   let unbondAmount = event.params.valueUnderlying.neg()
   let addressInfo = mustLoadAddressInfo(unbondAddress, event.block, 'Unbond')
-  applyAccountDeltaBond(addressInfo, unbondAmount)
+  applyAccountDaoDeltaBond(addressInfo, unbondAmount)
 }
 
-// Apply bond/unbond from account represented by AddressInfo
+// Apply DAO bond/unbond from account represented by AddressInfo
 // Positive amount means bond, Negative amount means unbond
-function applyAccountDeltaBond(addressInfo: AddressInfo, deltaBond: BigInt): void {
+function applyAccountDaoDeltaBond(addressInfo: AddressInfo, deltaBond: BigInt): void {
   let currentEpochSnapshot = epochSnapshotGetCurrent()
   let currentEpoch = currentEpochSnapshot.epoch
 
@@ -227,7 +242,8 @@ function applyAccountDeltaBond(addressInfo: AddressInfo, deltaBond: BigInt): voi
 
     // Account funds will freeze on a later epoch now
     let previousFundsToBeFrozen = fundsToBeFrozenForEpoch(addressInfo.daoFluidUntilEpoch)
-    previousFundsToBeFrozen.daoFluidToFrozen -= (addressInfo.daoStaged + addressInfo.daoBonded)
+    previousFundsToBeFrozen.daoStagedFluidToFrozen -= addressInfo.daoStaged
+    previousFundsToBeFrozen.daoBondedFluidToFrozen -= addressInfo.daoBonded
     previousFundsToBeFrozen.save()
   } else {
     // Account funds move from staged to fluid
@@ -246,10 +262,52 @@ function applyAccountDeltaBond(addressInfo: AddressInfo, deltaBond: BigInt): voi
   // Funds will become frozen after lockup period
   addressInfo.daoFluidUntilEpoch = fluidUntilEpoch
   let fundsToBeFrozen = fundsToBeFrozenForEpoch(fluidUntilEpoch)
-  fundsToBeFrozen.daoFluidToFrozen += (addressInfo.daoStaged + addressInfo.daoBonded)
+  fundsToBeFrozen.daoStagedFluidToFrozen += addressInfo.daoStaged
+  fundsToBeFrozen.daoBondedFluidToFrozen += addressInfo.daoBonded
 
   currentEpochSnapshot.save()
   addressInfo.save()
+}
+
+export function handleDaoVote(event: DaoVote): void {
+  let voteAddress = event.params.account
+  let voteCandidate = event.params.account
+  let addressInfo = mustLoadAddressInfo(voteAddress, event.block, 'Vote')
+  let currentEpochSnapshot = epochSnapshotGetCurrent()
+
+  // NOTE(Fede): Event does not have the lockup period, so need to call
+  // the contract to calculate. Could just use lockedUntil but it was
+  // added late in the contract so not sure how that behaves on early
+  // blocks
+  let daoContract = DaoContract.bind(event.address)
+  let candidateStart = daoContract.startFor(voteCandidate)
+  let candidatePeriod = daoContract.periodFor(voteCandidate)
+  let newDaoLockedUntilEpoch = candidateStart + candidatePeriod
+
+  if(newDaoLockedUntilEpoch > addressInfo.daoLockedUntilEpoch) {
+    let daoStatus = addressInfoDaoStatus(addressInfo, currentEpochSnapshot.epoch)
+    if(daoStatus == 'locked') {
+      // Funds were locked until a previous Epoch
+      let oldFundsToBeFrozen = fundsToBeFrozenForEpoch(addressInfo.daoLockedUntilEpoch)
+      oldFundsToBeFrozen.daoStagedLockedToFrozen -= addressInfo.daoStaged
+      oldFundsToBeFrozen.daoBondedLockedToFrozen -= addressInfo.daoBonded
+      oldFundsToBeFrozen.save()
+    } else if(daoStatus == 'fluid') {
+      // Funds were fluid
+      let oldFundsToBeFrozen = fundsToBeFrozenForEpoch(addressInfo.daoFluidUntilEpoch)
+      oldFundsToBeFrozen.daoStagedFluidToFrozen -= addressInfo.daoStaged
+      oldFundsToBeFrozen.daoBondedFluidToFrozen -= addressInfo.daoBonded
+      oldFundsToBeFrozen.save()
+    }
+
+    let newFundsToBeFrozen = fundsToBeFrozenForEpoch(newDaoLockedUntilEpoch)
+    newFundsToBeFrozen.daoStagedLockedToFrozen += addressInfo.daoStaged
+    newFundsToBeFrozen.daoBondedLockedToFrozen += addressInfo.daoBonded
+    addressInfo.daoLockedUntilEpoch = newDaoLockedUntilEpoch
+
+    addressInfo.save()
+    newFundsToBeFrozen.save()
+  }
 }
 
 export function handleDaoSupplyDecrease(event: DaoSupplyDecrease): void {
@@ -368,9 +426,12 @@ function fundsToBeFrozenForEpoch(epoch: BigInt): FundsToBeFrozen {
   if(fundsToBeFrozen == null) {
     fundsToBeFrozen = new FundsToBeFrozen(epoch.toString())
     fundsToBeFrozen.epoch = epoch
-    fundsToBeFrozen.daoLockedToFrozen = BigInt.fromI32(0)
-    fundsToBeFrozen.daoFluidToFrozen = BigInt.fromI32(0)
-    fundsToBeFrozen.lpFluidToFrozen = BigInt.fromI32(0)
+    fundsToBeFrozen.daoStagedFluidToFrozen = BigInt.fromI32(0)
+    fundsToBeFrozen.daoStagedLockedToFrozen = BigInt.fromI32(0)
+    fundsToBeFrozen.daoBondedFluidToFrozen = BigInt.fromI32(0)
+    fundsToBeFrozen.daoBondedLockedToFrozen = BigInt.fromI32(0)
+    fundsToBeFrozen.lpStagedFluidToFrozen = BigInt.fromI32(0)
+    fundsToBeFrozen.lpBondedFluidToFrozen = BigInt.fromI32(0)
   }
 
   return <FundsToBeFrozen>fundsToBeFrozen
@@ -391,6 +452,7 @@ function addressInfoNew(id: string): AddressInfo {
   addressInfo.lpBonded = BigInt.fromI32(0)
   addressInfo.lpStaged = BigInt.fromI32(0)
   addressInfo.lpRewarded = BigInt.fromI32(0)
+  addressInfo.lpFluidUntilEpoch = BigInt.fromI32(0)
 
   return addressInfo
 }
@@ -408,7 +470,7 @@ function addressInfoDaoStatus(addressInfo: AddressInfo, epoch: BigInt): string {
 function mustLoadAddressInfo(address: Address, block: ethereum.Block, operation: String): AddressInfo {
   let addressInfo = AddressInfo.load(address.toHexString())
   if(addressInfo == null) {
-    log.critical(
+    log.error(
       '[{}]: Got {} from previously non existing address {}',
       [block.number.toString(), operation, address.toHexString()]
     )

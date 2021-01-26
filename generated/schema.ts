@@ -334,31 +334,58 @@ export class FundsToBeFrozen extends Entity {
     this.set("epoch", Value.fromBigInt(value));
   }
 
-  get daoFluidToFrozen(): BigInt {
-    let value = this.get("daoFluidToFrozen");
+  get daoStagedFluidToFrozen(): BigInt {
+    let value = this.get("daoStagedFluidToFrozen");
     return value.toBigInt();
   }
 
-  set daoFluidToFrozen(value: BigInt) {
-    this.set("daoFluidToFrozen", Value.fromBigInt(value));
+  set daoStagedFluidToFrozen(value: BigInt) {
+    this.set("daoStagedFluidToFrozen", Value.fromBigInt(value));
   }
 
-  get daoLockedToFrozen(): BigInt {
-    let value = this.get("daoLockedToFrozen");
+  get daoStagedLockedToFrozen(): BigInt {
+    let value = this.get("daoStagedLockedToFrozen");
     return value.toBigInt();
   }
 
-  set daoLockedToFrozen(value: BigInt) {
-    this.set("daoLockedToFrozen", Value.fromBigInt(value));
+  set daoStagedLockedToFrozen(value: BigInt) {
+    this.set("daoStagedLockedToFrozen", Value.fromBigInt(value));
   }
 
-  get lpFluidToFrozen(): BigInt {
-    let value = this.get("lpFluidToFrozen");
+  get daoBondedFluidToFrozen(): BigInt {
+    let value = this.get("daoBondedFluidToFrozen");
     return value.toBigInt();
   }
 
-  set lpFluidToFrozen(value: BigInt) {
-    this.set("lpFluidToFrozen", Value.fromBigInt(value));
+  set daoBondedFluidToFrozen(value: BigInt) {
+    this.set("daoBondedFluidToFrozen", Value.fromBigInt(value));
+  }
+
+  get daoBondedLockedToFrozen(): BigInt {
+    let value = this.get("daoBondedLockedToFrozen");
+    return value.toBigInt();
+  }
+
+  set daoBondedLockedToFrozen(value: BigInt) {
+    this.set("daoBondedLockedToFrozen", Value.fromBigInt(value));
+  }
+
+  get lpStagedFluidToFrozen(): BigInt {
+    let value = this.get("lpStagedFluidToFrozen");
+    return value.toBigInt();
+  }
+
+  set lpStagedFluidToFrozen(value: BigInt) {
+    this.set("lpStagedFluidToFrozen", Value.fromBigInt(value));
+  }
+
+  get lpBondedFluidToFrozen(): BigInt {
+    let value = this.get("lpBondedFluidToFrozen");
+    return value.toBigInt();
+  }
+
+  set lpBondedFluidToFrozen(value: BigInt) {
+    this.set("lpBondedFluidToFrozen", Value.fromBigInt(value));
   }
 }
 
