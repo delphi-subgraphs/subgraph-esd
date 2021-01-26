@@ -36,6 +36,7 @@ import { UniswapV2PairContract } from '../generated/DAOContract/UniswapV2PairCon
 /*
  *** CONSTANTS
  */
+let BI_ZERO = BigInt.fromI32(0)
 
 let ADDRESS_ZERO_HEX = '0x0000000000000000000000000000000000000000'
 let ADDRESS_UNISWAP_PAIR = Address.fromString('0x88ff79eb2bc5850f27315415da8685282c7610f9')
@@ -55,13 +56,17 @@ let DAO_EXIT_LOCKUP_EPOCHS = BigInt.fromI32(15)
 /*
  *** DOLLAR
  */
+
 export function handleDollarTransfer(event: DollarTransfer): void {
   let transferFrom = event.params.from
   let transferTo = event.params.to
   let transferAmount = event.params.value
 
+  log.debug(
+    '[{}]: Transfer {} from address {} to {}',
+    [event.block.number.toString(), transferAmount.toString(), transferFrom.toHexString(), transferTo.toHexString()])
   // Deduct amount from sender
-  if(transferFrom.toHexString() != ADDRESS_ZERO_HEX) {
+  if(transferFrom.toHexString() != ADDRESS_ZERO_HEX && transferAmount > BI_ZERO) {
     let fromAddressInfo = mustLoadAddressInfo(transferFrom, event.block, 'Transfer')
     if (fromAddressInfo.esdBalance < transferAmount) {
       log.error(
@@ -80,7 +85,7 @@ export function handleDollarTransfer(event: DollarTransfer): void {
   }
 
   // Add amount to receiver
-  if(transferTo.toHexString() != ADDRESS_ZERO_HEX) {
+  if(transferTo.toHexString() != ADDRESS_ZERO_HEX && transferAmount > BI_ZERO) {
     let toAddressInfo = AddressInfo.load(transferTo.toHexString())
     if (toAddressInfo == null) {
       toAddressInfo = addressInfoNew(transferTo.toHexString())
@@ -119,7 +124,6 @@ export function handleDaoAdvance(event: DaoAdvance): void {
   currentEpochSnapshot.daoStagedFrozen += (fundsToBeFrozen.daoStagedFluidToFrozen + fundsToBeFrozen.daoStagedLockedToFrozen)
 
   // TODO(Fede): Compute LP amounts
-
   currentEpochSnapshot.save()
 
   // Fill in balances for history entities
@@ -161,66 +165,70 @@ export function handleDaoAdvance(event: DaoAdvance): void {
     lpTokenHistory.totalSupply = totalLpTokens
     lpTokenHistory.totalBonded = totalLpBonded
     lpTokenHistory.totalStaged = totalLpStaged
+    lpTokenHistory.save()
   }
 }
 
 export function handleDaoDeposit(event: DaoDeposit): void {
   let depositAmount = event.params.value
   let depositAddress = event.params.account
-  let currentEpochSnapshot = epochSnapshotGetCurrent()
-  let addressInfo = mustLoadAddressInfo(depositAddress, event.block, 'Deposit')
+  if(depositAmount > BI_ZERO) {
+    let currentEpochSnapshot = epochSnapshotGetCurrent()
+    let addressInfo = mustLoadAddressInfo(depositAddress, event.block, 'Deposit')
+    if(addressInfo == null) {
+      log.error(
+        '[{}]: Got deposit from previously non existing address {}',
+        [event.block.number.toString(), depositAddress.toHexString()]
+      )
+      return
+    }
 
-  if(addressInfo == null) {
-    log.error(
-      '[{}]: Got deposit from previously non existing address {}',
-      [event.block.number.toString(), depositAddress.toHexString()]
-    )
-    return
+    currentEpochSnapshot.daoStagedTotal += depositAmount
+    addressInfo.daoStaged += depositAmount
+
+    if (addressInfoDaoStatus(addressInfo, currentEpochSnapshot.epoch) == "locked") {
+      currentEpochSnapshot.daoStagedLocked += depositAmount
+    } else {
+      currentEpochSnapshot.daoStagedFrozen += depositAmount
+    }
+
+    currentEpochSnapshot.save()
+    addressInfo.save()
   }
-
-  currentEpochSnapshot.daoStagedTotal += depositAmount
-  addressInfo.daoStaged += depositAmount
-
-  if (addressInfoDaoStatus(addressInfo, currentEpochSnapshot.epoch) == "locked") {
-    currentEpochSnapshot.daoStagedLocked += depositAmount
-  } else {
-    currentEpochSnapshot.daoStagedFrozen += depositAmount
-  }
-
-  currentEpochSnapshot.save()
-  addressInfo.save()
 }
 
 export function handleDaoWithdraw(event: DaoWithdraw): void {
   let withdrawAmount = event.params.value
   let withdrawAddress = event.params.account
-  let currentEpochSnapshot = epochSnapshotGetCurrent()
-  let addressInfo = mustLoadAddressInfo(withdrawAddress, event.block, 'Withdraw')
+  if(withdrawAmount > BI_ZERO) {
+    let currentEpochSnapshot = epochSnapshotGetCurrent()
+    let addressInfo = mustLoadAddressInfo(withdrawAddress, event.block, 'Withdraw')
 
-  currentEpochSnapshot.daoStagedTotal -= withdrawAmount
-  addressInfo.daoStaged -= withdrawAmount
+    currentEpochSnapshot.daoStagedTotal -= withdrawAmount
+    addressInfo.daoStaged -= withdrawAmount
 
-  if (addressInfoDaoStatus(addressInfo, currentEpochSnapshot.epoch) == "locked") {
-    currentEpochSnapshot.daoStagedLocked -= withdrawAmount
-  } else {
-    currentEpochSnapshot.daoStagedFrozen -= withdrawAmount
+    if (addressInfoDaoStatus(addressInfo, currentEpochSnapshot.epoch) == "locked") {
+      currentEpochSnapshot.daoStagedLocked -= withdrawAmount
+    } else {
+      currentEpochSnapshot.daoStagedFrozen -= withdrawAmount
+    }
+    currentEpochSnapshot.save()
+    addressInfo.save()
   }
-  currentEpochSnapshot.save()
-  addressInfo.save()
 }
 
 export function handleDaoBond(event: DaoBond): void {
   let bondAddress = event.params.account
-  let bondAmount = event.params.value
+  let bondAmount = event.params.valueUnderlying
   let addressInfo = mustLoadAddressInfo(bondAddress, event.block, 'Bond')
-  applyAccountDaoDeltaBond(addressInfo, bondAmount)
+  applyAccountDaoDeltaBond(addressInfo, bondAmount,)
 }
 
 export function handleDaoUnbond(event: DaoUnbond): void {
   let unbondAddress = event.params.account
-  let unbondAmount = event.params.valueUnderlying.neg()
+  let unbondAmount = event.params.valueUnderlying
   let addressInfo = mustLoadAddressInfo(unbondAddress, event.block, 'Unbond')
-  applyAccountDaoDeltaBond(addressInfo, unbondAmount)
+  applyAccountDaoDeltaBond(addressInfo, unbondAmount.neg())
 }
 
 // Apply DAO bond/unbond from account represented by AddressInfo
