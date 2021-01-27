@@ -60,6 +60,15 @@ export class EpochSnapshot extends Entity {
     this.set("timestamp", Value.fromBigInt(value));
   }
 
+  get startBlock(): BigInt {
+    let value = this.get("startBlock");
+    return value.toBigInt();
+  }
+
+  set startBlock(value: BigInt) {
+    this.set("startBlock", Value.fromBigInt(value));
+  }
+
   get expiredCoupons(): BigInt {
     let value = this.get("expiredCoupons");
     return value.toBigInt();

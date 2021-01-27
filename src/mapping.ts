@@ -111,16 +111,17 @@ export function handleDaoAdvance(event: DaoAdvance): void {
   let epoch = event.params.epoch
   currentEpochSnapshot.epoch = epoch
   currentEpochSnapshot.timestamp = event.params.timestamp
+  currentEpochSnapshot.startBlock = event.block.number
 
   // Compute amounts that go back to frozen state on the epoch
   let fundsToBeFrozen = fundsToBeFrozenForEpoch(epoch)
 
   currentEpochSnapshot.daoBondedEsdsFluid -= fundsToBeFrozen.daoBondedEsdsFluidToFrozen
-  currentEpochSnapshot.daoBondedEsdsLocked += fundsToBeFrozen.daoBondedEsdsLockedToFrozen
+  currentEpochSnapshot.daoBondedEsdsLocked -= fundsToBeFrozen.daoBondedEsdsLockedToFrozen
   currentEpochSnapshot.daoBondedEsdsFrozen += (fundsToBeFrozen.daoBondedEsdsFluidToFrozen + fundsToBeFrozen.daoBondedEsdsLockedToFrozen)
 
   currentEpochSnapshot.daoStagedEsdFluid -= fundsToBeFrozen.daoStagedEsdFluidToFrozen
-  currentEpochSnapshot.daoStagedEsdLocked += fundsToBeFrozen.daoStagedEsdLockedToFrozen
+  currentEpochSnapshot.daoStagedEsdLocked -= fundsToBeFrozen.daoStagedEsdLockedToFrozen
   currentEpochSnapshot.daoStagedEsdFrozen += (fundsToBeFrozen.daoStagedEsdFluidToFrozen + fundsToBeFrozen.daoStagedEsdLockedToFrozen)
 
   // TODO(Fede): Compute LP amounts
@@ -181,7 +182,7 @@ export function handleDaoDeposit(event: DaoDeposit): void {
       )
       return
     }
-    applyDaoDepositDelta(addressInfo, depositAmount)
+    applyDaoDepositDelta(addressInfo, depositAmount, event.block)
   }
 }
 
@@ -191,19 +192,28 @@ export function handleDaoWithdraw(event: DaoWithdraw): void {
   if(withdrawAmount > BI_ZERO) {
     let addressInfo = mustLoadAddressInfo(withdrawAddress, event.block, 'Withdraw')
     let deltaStagedEsd = withdrawAmount.neg()
-    applyDaoDepositDelta(addressInfo, deltaStagedEsd)
+    applyDaoDepositDelta(addressInfo, deltaStagedEsd, event.block)
   }
 }
 
 // Apply DAO Withdraw/Deposit from account represented by AddressInfo
 // Positive deltaStagedEsd amount means Deposit, Negative amount means Withdraw
-function applyDaoDepositDelta(addressInfo: AddressInfo, deltaStagedEsd: BigInt): void {
+function applyDaoDepositDelta(addressInfo: AddressInfo, deltaStagedEsd: BigInt, block: ethereum.Block): void {
   let currentEpochSnapshot = epochSnapshotGetCurrent()
+
   currentEpochSnapshot.daoStagedEsdTotal += deltaStagedEsd
   addressInfo.daoStagedEsd += deltaStagedEsd
-
-  if (addressInfoDaoStatus(addressInfo, currentEpochSnapshot.epoch) == "locked") {
+  let accountStatus = addressInfoDaoStatus(addressInfo, currentEpochSnapshot.epoch)
+  if (accountStatus == "locked") {
     currentEpochSnapshot.daoStagedEsdLocked += deltaStagedEsd
+
+    // Add amount to funds unlocked 
+    let fundsToBeFrozen = fundsToBeFrozenForEpoch(addressInfo.daoLockedUntilEpoch)
+  } if (accountStatus == "fluid") {
+    log.error(
+      "[{}]: Got Withdraw/Deposit event on fluid status for address {} at epoch {}",
+      [block.number.toString(), addressInfo.id, currentEpochSnapshot.epoch.toString()]
+    )
   } else {
     currentEpochSnapshot.daoStagedEsdFrozen += deltaStagedEsd
   }
@@ -330,6 +340,14 @@ export function handleDaoSupplyDecrease(event: DaoSupplyDecrease): void {
 export function handleDaoSupplyIncrease(event: DaoSupplyIncrease): void {
   let currentEpochSnapshot = epochSnapshotGetCurrent()
   currentEpochSnapshot.oraclePrice = event.params.price
+
+  let newRedeemable = event.params.newRedeemable
+  let lessDebt = event.params.lessDebt
+  let newBonded = event.params.newBonded
+  
+
+
+
   currentEpochSnapshot.save()
 }
 
@@ -350,6 +368,7 @@ function epochSnapshotGetCurrent(): EpochSnapshot {
     epochSnapshot = new EpochSnapshot("current")
     epochSnapshot.epoch = BigInt.fromI32(0)
     epochSnapshot.timestamp = BigInt.fromI32(0)
+    epochSnapshot.startBlock = BigInt.fromI32(10722554)
 
     epochSnapshot.expiredCoupons = BigInt.fromI32(0)
     epochSnapshot.outstandingCoupons = BigInt.fromI32(0)
@@ -393,6 +412,7 @@ function epochSnapshotCopyCurrent(currentEpochSnapshot: EpochSnapshot): void {
   let epochSnapshot = new EpochSnapshot(currentEpochSnapshot.epoch.toString())
   epochSnapshot.epoch = currentEpochSnapshot.epoch
   epochSnapshot.timestamp = currentEpochSnapshot.timestamp
+  epochSnapshot.startBlock = currentEpochSnapshot.startBlock
 
   epochSnapshot.expiredCoupons = currentEpochSnapshot.expiredCoupons
   epochSnapshot.outstandingCoupons = currentEpochSnapshot.outstandingCoupons

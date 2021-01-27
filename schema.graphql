@@ -2,6 +2,7 @@ type EpochSnapshot @entity {
   id: ID!
   epoch: BigInt!
   timestamp: BigInt!
+  startBlock: BigInt!
 
   expiredCoupons: BigInt!
   outstandingCoupons: BigInt!
