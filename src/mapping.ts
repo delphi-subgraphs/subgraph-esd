@@ -111,7 +111,7 @@ export function handleDaoAdvance(event: DaoAdvance): void {
   let epoch = event.params.epoch
   currentEpochSnapshot.epoch = epoch
   currentEpochSnapshot.timestamp = event.params.timestamp
-  currentEpochSnapshot.startBlock = event.block.number
+  currentEpochSnapshot.block = event.block.number
 
   // Compute amounts that go back to frozen state on the epoch
   let fundsToBeFrozen = fundsToBeFrozenForEpoch(epoch)
@@ -368,7 +368,7 @@ function epochSnapshotGetCurrent(): EpochSnapshot {
     epochSnapshot = new EpochSnapshot("current")
     epochSnapshot.epoch = BigInt.fromI32(0)
     epochSnapshot.timestamp = BigInt.fromI32(0)
-    epochSnapshot.startBlock = BigInt.fromI32(10722554)
+    epochSnapshot.block = BigInt.fromI32(10722554)
 
     epochSnapshot.expiredCoupons = BigInt.fromI32(0)
     epochSnapshot.outstandingCoupons = BigInt.fromI32(0)
@@ -412,7 +412,7 @@ function epochSnapshotCopyCurrent(currentEpochSnapshot: EpochSnapshot): void {
   let epochSnapshot = new EpochSnapshot(currentEpochSnapshot.epoch.toString())
   epochSnapshot.epoch = currentEpochSnapshot.epoch
   epochSnapshot.timestamp = currentEpochSnapshot.timestamp
-  epochSnapshot.startBlock = currentEpochSnapshot.startBlock
+  epochSnapshot.block = currentEpochSnapshot.block
 
   epochSnapshot.expiredCoupons = currentEpochSnapshot.expiredCoupons
   epochSnapshot.outstandingCoupons = currentEpochSnapshot.outstandingCoupons
