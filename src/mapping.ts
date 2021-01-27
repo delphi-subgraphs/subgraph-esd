@@ -115,13 +115,13 @@ export function handleDaoAdvance(event: DaoAdvance): void {
   // Compute amounts that go back to frozen state on the epoch
   let fundsToBeFrozen = fundsToBeFrozenForEpoch(epoch)
 
-  currentEpochSnapshot.daoBondedFluid -= fundsToBeFrozen.daoBondedFluidToFrozen
-  currentEpochSnapshot.daoBondedLocked += fundsToBeFrozen.daoBondedLockedToFrozen
-  currentEpochSnapshot.daoBondedFrozen += (fundsToBeFrozen.daoBondedFluidToFrozen + fundsToBeFrozen.daoBondedLockedToFrozen)
+  currentEpochSnapshot.daoBondedEsdsFluid -= fundsToBeFrozen.daoBondedEsdsFluidToFrozen
+  currentEpochSnapshot.daoBondedEsdsLocked += fundsToBeFrozen.daoBondedEsdsLockedToFrozen
+  currentEpochSnapshot.daoBondedEsdsFrozen += (fundsToBeFrozen.daoBondedEsdsFluidToFrozen + fundsToBeFrozen.daoBondedEsdsLockedToFrozen)
 
-  currentEpochSnapshot.daoStagedFluid -= fundsToBeFrozen.daoStagedFluidToFrozen
-  currentEpochSnapshot.daoStagedLocked += fundsToBeFrozen.daoStagedLockedToFrozen
-  currentEpochSnapshot.daoStagedFrozen += (fundsToBeFrozen.daoStagedFluidToFrozen + fundsToBeFrozen.daoStagedLockedToFrozen)
+  currentEpochSnapshot.daoStagedEsdFluid -= fundsToBeFrozen.daoStagedEsdFluidToFrozen
+  currentEpochSnapshot.daoStagedEsdLocked += fundsToBeFrozen.daoStagedEsdLockedToFrozen
+  currentEpochSnapshot.daoStagedEsdFrozen += (fundsToBeFrozen.daoStagedEsdFluidToFrozen + fundsToBeFrozen.daoStagedEsdLockedToFrozen)
 
   // TODO(Fede): Compute LP amounts
   currentEpochSnapshot.save()
@@ -173,7 +173,6 @@ export function handleDaoDeposit(event: DaoDeposit): void {
   let depositAmount = event.params.value
   let depositAddress = event.params.account
   if(depositAmount > BI_ZERO) {
-    let currentEpochSnapshot = epochSnapshotGetCurrent()
     let addressInfo = mustLoadAddressInfo(depositAddress, event.block, 'Deposit')
     if(addressInfo == null) {
       log.error(
@@ -182,18 +181,7 @@ export function handleDaoDeposit(event: DaoDeposit): void {
       )
       return
     }
-
-    currentEpochSnapshot.daoStagedTotal += depositAmount
-    addressInfo.daoStaged += depositAmount
-
-    if (addressInfoDaoStatus(addressInfo, currentEpochSnapshot.epoch) == "locked") {
-      currentEpochSnapshot.daoStagedLocked += depositAmount
-    } else {
-      currentEpochSnapshot.daoStagedFrozen += depositAmount
-    }
-
-    currentEpochSnapshot.save()
-    addressInfo.save()
+    applyDaoDepositDelta(addressInfo, depositAmount)
   }
 }
 
@@ -201,39 +189,51 @@ export function handleDaoWithdraw(event: DaoWithdraw): void {
   let withdrawAmount = event.params.value
   let withdrawAddress = event.params.account
   if(withdrawAmount > BI_ZERO) {
-    let currentEpochSnapshot = epochSnapshotGetCurrent()
     let addressInfo = mustLoadAddressInfo(withdrawAddress, event.block, 'Withdraw')
-
-    currentEpochSnapshot.daoStagedTotal -= withdrawAmount
-    addressInfo.daoStaged -= withdrawAmount
-
-    if (addressInfoDaoStatus(addressInfo, currentEpochSnapshot.epoch) == "locked") {
-      currentEpochSnapshot.daoStagedLocked -= withdrawAmount
-    } else {
-      currentEpochSnapshot.daoStagedFrozen -= withdrawAmount
-    }
-    currentEpochSnapshot.save()
-    addressInfo.save()
+    let deltaStagedEsd = withdrawAmount.neg()
+    applyDaoDepositDelta(addressInfo, deltaStagedEsd)
   }
 }
 
+// Apply DAO Withdraw/Deposit from account represented by AddressInfo
+// Positive deltaStagedEsd amount means Deposit, Negative amount means Withdraw
+function applyDaoDepositDelta(addressInfo: AddressInfo, deltaStagedEsd: BigInt): void {
+  let currentEpochSnapshot = epochSnapshotGetCurrent()
+  currentEpochSnapshot.daoStagedEsdTotal += deltaStagedEsd
+  addressInfo.daoStagedEsd += deltaStagedEsd
+
+  if (addressInfoDaoStatus(addressInfo, currentEpochSnapshot.epoch) == "locked") {
+    currentEpochSnapshot.daoStagedEsdLocked += deltaStagedEsd
+  } else {
+    currentEpochSnapshot.daoStagedEsdFrozen += deltaStagedEsd
+  }
+  currentEpochSnapshot.save()
+  addressInfo.save()
+}
+
 export function handleDaoBond(event: DaoBond): void {
-  let bondAddress = event.params.account
-  let bondAmount = event.params.valueUnderlying
-  let addressInfo = mustLoadAddressInfo(bondAddress, event.block, 'Bond')
-  applyAccountDaoDeltaBond(addressInfo, bondAmount,)
+  let account = event.params.account
+  let deltaStagedEsd = event.params.valueUnderlying.neg()
+  let deltaBondedEsds = event.params.value
+  if(deltaStagedEsd > BI_ZERO || deltaBondedEsds > BI_ZERO) {
+    let addressInfo = mustLoadAddressInfo(account, event.block, 'Bond')
+    applyDaoBondingDeltas(addressInfo, deltaStagedEsd, deltaBondedEsds)
+  }
 }
 
 export function handleDaoUnbond(event: DaoUnbond): void {
-  let unbondAddress = event.params.account
-  let unbondAmount = event.params.valueUnderlying
-  let addressInfo = mustLoadAddressInfo(unbondAddress, event.block, 'Unbond')
-  applyAccountDaoDeltaBond(addressInfo, unbondAmount.neg())
+  let account = event.params.account
+  let deltaStagedEsd = event.params.valueUnderlying
+  let deltaBondedEsds = event.params.value.neg()
+  if(deltaStagedEsd > BI_ZERO || deltaBondedEsds > BI_ZERO) {
+    let addressInfo = mustLoadAddressInfo(account, event.block, 'Unbond')
+    applyDaoBondingDeltas(addressInfo, deltaStagedEsd, deltaBondedEsds)
+  }
 }
 
-// Apply DAO bond/unbond from account represented by AddressInfo
+// Apply DAO Bond/Unbond from account represented by AddressInfo
 // Positive amount means bond, Negative amount means unbond
-function applyAccountDaoDeltaBond(addressInfo: AddressInfo, deltaBond: BigInt): void {
+function applyDaoBondingDeltas(addressInfo: AddressInfo, deltaStagedEsd: BigInt, deltaBondedEsds: BigInt): void {
   let currentEpochSnapshot = epochSnapshotGetCurrent()
   let currentEpoch = currentEpochSnapshot.epoch
 
@@ -244,34 +244,37 @@ function applyAccountDaoDeltaBond(addressInfo: AddressInfo, deltaBond: BigInt): 
   // Modify aggregated values accordingly
   if(previousAccountStatus == 'fluid') {
     // Account funds stay fluid
-    // Amount bonded moves from stagedFluid to bondedFluid
-    currentEpochSnapshot.daoStagedFluid -= deltaBond
-    currentEpochSnapshot.daoBondedFluid += deltaBond
+    currentEpochSnapshot.daoStagedEsdFluid += deltaStagedEsd
+    currentEpochSnapshot.daoBondedEsdsFluid += deltaBondedEsds
 
     // Account funds will freeze on a later epoch now
     let previousFundsToBeFrozen = fundsToBeFrozenForEpoch(addressInfo.daoFluidUntilEpoch)
-    previousFundsToBeFrozen.daoStagedFluidToFrozen -= addressInfo.daoStaged
-    previousFundsToBeFrozen.daoBondedFluidToFrozen -= addressInfo.daoBonded
+    previousFundsToBeFrozen.daoStagedEsdFluidToFrozen -= addressInfo.daoStagedEsd
+    previousFundsToBeFrozen.daoBondedEsdsFluidToFrozen -= addressInfo.daoBondedEsds
     previousFundsToBeFrozen.save()
   } else {
-    // Account funds move from staged to fluid
-    currentEpochSnapshot.daoStagedFrozen -= addressInfo.daoStaged
-    currentEpochSnapshot.daoBondedFrozen -= addressInfo.daoBonded
-    currentEpochSnapshot.daoStagedFluid += (addressInfo.daoStaged - deltaBond)
-    currentEpochSnapshot.daoBondedFluid += (addressInfo.daoBonded + deltaBond)
+    // Account funds move from frozen to fluid
+    currentEpochSnapshot.daoStagedEsdFrozen -= addressInfo.daoStagedEsd
+    currentEpochSnapshot.daoBondedEsdsFrozen -= addressInfo.daoBondedEsds
+    currentEpochSnapshot.daoStagedEsdFluid += (addressInfo.daoStagedEsd + deltaStagedEsd)
+    currentEpochSnapshot.daoBondedEsdsFluid += (addressInfo.daoBondedEsds + deltaBondedEsds)
   }
 
-  // Staged/Bonded status: Amount goes from staged to bonded
-  currentEpochSnapshot.daoStagedTotal -= deltaBond
-  currentEpochSnapshot.daoBondedTotal += deltaBond
-  addressInfo.daoStaged -= deltaBond
-  addressInfo.daoBonded += deltaBond
+  // Staged/Bonded status: Delta staged goes from bonded esd to staged esd
+  currentEpochSnapshot.daoStagedEsdTotal += deltaStagedEsd
+  currentEpochSnapshot.daoBondedEsdTotal -= deltaStagedEsd
+  addressInfo.daoStagedEsd += deltaStagedEsd
 
-  // Funds will become frozen after lockup period
+  // Delta ESDS get minted as totalBonded
+  addressInfo.daoBondedEsds += deltaBondedEsds
+  currentEpochSnapshot.daoBondedEsdsTotal += deltaBondedEsds
+
+  // Funds are now fluid. Will become frozen after lockup period
   addressInfo.daoFluidUntilEpoch = fluidUntilEpoch
   let fundsToBeFrozen = fundsToBeFrozenForEpoch(fluidUntilEpoch)
-  fundsToBeFrozen.daoStagedFluidToFrozen += addressInfo.daoStaged
-  fundsToBeFrozen.daoBondedFluidToFrozen += addressInfo.daoBonded
+  fundsToBeFrozen.daoStagedEsdFluidToFrozen += addressInfo.daoStagedEsd
+  fundsToBeFrozen.daoBondedEsdsFluidToFrozen += addressInfo.daoBondedEsds
+  fundsToBeFrozen.save()
 
   currentEpochSnapshot.save()
   addressInfo.save()
@@ -297,20 +300,20 @@ export function handleDaoVote(event: DaoVote): void {
     if(daoStatus == 'locked') {
       // Funds were locked until a previous Epoch
       let oldFundsToBeFrozen = fundsToBeFrozenForEpoch(addressInfo.daoLockedUntilEpoch)
-      oldFundsToBeFrozen.daoStagedLockedToFrozen -= addressInfo.daoStaged
-      oldFundsToBeFrozen.daoBondedLockedToFrozen -= addressInfo.daoBonded
+      oldFundsToBeFrozen.daoStagedEsdLockedToFrozen -= addressInfo.daoStagedEsd
+      oldFundsToBeFrozen.daoBondedEsdsLockedToFrozen -= addressInfo.daoBondedEsds
       oldFundsToBeFrozen.save()
     } else if(daoStatus == 'fluid') {
-      // Funds were fluid
+      // Funds were fluid now they are locked
       let oldFundsToBeFrozen = fundsToBeFrozenForEpoch(addressInfo.daoFluidUntilEpoch)
-      oldFundsToBeFrozen.daoStagedFluidToFrozen -= addressInfo.daoStaged
-      oldFundsToBeFrozen.daoBondedFluidToFrozen -= addressInfo.daoBonded
+      oldFundsToBeFrozen.daoStagedEsdFluidToFrozen -= addressInfo.daoStagedEsd
+      oldFundsToBeFrozen.daoBondedEsdsFluidToFrozen -= addressInfo.daoBondedEsds
       oldFundsToBeFrozen.save()
     }
 
     let newFundsToBeFrozen = fundsToBeFrozenForEpoch(newDaoLockedUntilEpoch)
-    newFundsToBeFrozen.daoStagedLockedToFrozen += addressInfo.daoStaged
-    newFundsToBeFrozen.daoBondedLockedToFrozen += addressInfo.daoBonded
+    newFundsToBeFrozen.daoStagedEsdLockedToFrozen += addressInfo.daoStagedEsd
+    newFundsToBeFrozen.daoBondedEsdsLockedToFrozen += addressInfo.daoBondedEsds
     addressInfo.daoLockedUntilEpoch = newDaoLockedUntilEpoch
 
     addressInfo.save()
@@ -354,15 +357,16 @@ function epochSnapshotGetCurrent(): EpochSnapshot {
     epochSnapshot.oraclePrice = BigInt.fromI32(0)
     epochSnapshot.bootstrappingAt = false
 
-    epochSnapshot.daoBondedTotal = BigInt.fromI32(0)
-    epochSnapshot.daoBondedFrozen = BigInt.fromI32(0)
-    epochSnapshot.daoBondedFluid = BigInt.fromI32(0)
-    epochSnapshot.daoBondedLocked = BigInt.fromI32(0)
+    epochSnapshot.daoBondedEsdTotal = BigInt.fromI32(0)
+    epochSnapshot.daoBondedEsdsTotal = BigInt.fromI32(0)
+    epochSnapshot.daoBondedEsdsFrozen = BigInt.fromI32(0)
+    epochSnapshot.daoBondedEsdsFluid = BigInt.fromI32(0)
+    epochSnapshot.daoBondedEsdsLocked = BigInt.fromI32(0)
 
-    epochSnapshot.daoStagedTotal = BigInt.fromI32(0)
-    epochSnapshot.daoStagedFrozen = BigInt.fromI32(0)
-    epochSnapshot.daoStagedFluid = BigInt.fromI32(0)
-    epochSnapshot.daoStagedLocked = BigInt.fromI32(0)
+    epochSnapshot.daoStagedEsdTotal = BigInt.fromI32(0)
+    epochSnapshot.daoStagedEsdFrozen = BigInt.fromI32(0)
+    epochSnapshot.daoStagedEsdFluid = BigInt.fromI32(0)
+    epochSnapshot.daoStagedEsdLocked = BigInt.fromI32(0)
 
     epochSnapshot.lpBondedTotal = BigInt.fromI32(0)
     epochSnapshot.lpBondedFrozen = BigInt.fromI32(0)
@@ -380,8 +384,6 @@ function epochSnapshotGetCurrent(): EpochSnapshot {
     epochSnapshot.lpClaimableLocked = BigInt.fromI32(0)
 
     epochSnapshot.lpRewardedTotal = BigInt.fromI32(0)
-    
-    epochSnapshot.save()
   }
 
   return <EpochSnapshot>epochSnapshot
@@ -398,15 +400,16 @@ function epochSnapshotCopyCurrent(currentEpochSnapshot: EpochSnapshot): void {
   epochSnapshot.oraclePrice = currentEpochSnapshot.oraclePrice
   epochSnapshot.bootstrappingAt = currentEpochSnapshot.bootstrappingAt
 
-  epochSnapshot.daoBondedTotal = currentEpochSnapshot.daoBondedTotal
-  epochSnapshot.daoBondedFrozen = currentEpochSnapshot.daoBondedFrozen
-  epochSnapshot.daoBondedFluid = currentEpochSnapshot.daoBondedFluid
-  epochSnapshot.daoBondedLocked = currentEpochSnapshot.daoBondedLocked
+  epochSnapshot.daoBondedEsdTotal = currentEpochSnapshot.daoBondedEsdTotal
+  epochSnapshot.daoBondedEsdsTotal = currentEpochSnapshot.daoBondedEsdsTotal
+  epochSnapshot.daoBondedEsdsFrozen = currentEpochSnapshot.daoBondedEsdsFrozen
+  epochSnapshot.daoBondedEsdsFluid = currentEpochSnapshot.daoBondedEsdsFluid
+  epochSnapshot.daoBondedEsdsLocked = currentEpochSnapshot.daoBondedEsdsLocked
 
-  epochSnapshot.daoStagedTotal = currentEpochSnapshot.daoStagedTotal
-  epochSnapshot.daoStagedFrozen = currentEpochSnapshot.daoStagedFrozen
-  epochSnapshot.daoStagedFluid = currentEpochSnapshot.daoStagedFluid
-  epochSnapshot.daoStagedLocked = currentEpochSnapshot.daoStagedLocked
+  epochSnapshot.daoStagedEsdTotal = currentEpochSnapshot.daoStagedEsdTotal
+  epochSnapshot.daoStagedEsdFrozen = currentEpochSnapshot.daoStagedEsdFrozen
+  epochSnapshot.daoStagedEsdFluid = currentEpochSnapshot.daoStagedEsdFluid
+  epochSnapshot.daoStagedEsdLocked = currentEpochSnapshot.daoStagedEsdLocked
 
   epochSnapshot.lpBondedTotal = currentEpochSnapshot.lpBondedTotal
   epochSnapshot.lpBondedFrozen = currentEpochSnapshot.lpBondedFrozen
@@ -434,11 +437,11 @@ function fundsToBeFrozenForEpoch(epoch: BigInt): FundsToBeFrozen {
   if(fundsToBeFrozen == null) {
     fundsToBeFrozen = new FundsToBeFrozen(epoch.toString())
     fundsToBeFrozen.epoch = epoch
-    fundsToBeFrozen.daoStagedFluidToFrozen = BigInt.fromI32(0)
-    fundsToBeFrozen.daoStagedLockedToFrozen = BigInt.fromI32(0)
-    fundsToBeFrozen.daoBondedFluidToFrozen = BigInt.fromI32(0)
-    fundsToBeFrozen.daoBondedLockedToFrozen = BigInt.fromI32(0)
-    fundsToBeFrozen.lpStagedFluidToFrozen = BigInt.fromI32(0)
+    fundsToBeFrozen.daoStagedEsdFluidToFrozen = BigInt.fromI32(0)
+    fundsToBeFrozen.daoStagedEsdLockedToFrozen = BigInt.fromI32(0)
+    fundsToBeFrozen.daoBondedEsdsFluidToFrozen = BigInt.fromI32(0)
+    fundsToBeFrozen.daoBondedEsdsLockedToFrozen = BigInt.fromI32(0)
+    fundsToBeFrozen.lpStagedTokensFluidToFrozen = BigInt.fromI32(0)
     fundsToBeFrozen.lpBondedFluidToFrozen = BigInt.fromI32(0)
   }
 
@@ -451,8 +454,8 @@ function addressInfoNew(id: string): AddressInfo {
   addressInfo.esdBalance = BigInt.fromI32(0)
 
   addressInfo.daoClaimable = BigInt.fromI32(0)
-  addressInfo.daoBonded = BigInt.fromI32(0)
-  addressInfo.daoStaged = BigInt.fromI32(0)
+  addressInfo.daoBondedEsds = BigInt.fromI32(0)
+  addressInfo.daoStagedEsd = BigInt.fromI32(0)
   addressInfo.daoLockedUntilEpoch = BigInt.fromI32(0)
   addressInfo.daoFluidUntilEpoch = BigInt.fromI32(0)
 

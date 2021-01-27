@@ -9,15 +9,16 @@ type EpochSnapshot @entity {
   oraclePrice: BigInt!
   bootstrappingAt: Boolean!
 
-  daoBondedTotal: BigInt!
-  daoBondedFrozen: BigInt!
-  daoBondedFluid: BigInt!
-  daoBondedLocked: BigInt!
+  daoBondedEsdTotal: BigInt!
+  daoBondedEsdsTotal: BigInt!
+  daoBondedEsdsFrozen: BigInt!
+  daoBondedEsdsFluid: BigInt!
+  daoBondedEsdsLocked: BigInt!
 
-  daoStagedTotal: BigInt!
-  daoStagedFrozen: BigInt!
-  daoStagedFluid: BigInt!
-  daoStagedLocked: BigInt!
+  daoStagedEsdTotal: BigInt!
+  daoStagedEsdFrozen: BigInt!
+  daoStagedEsdFluid: BigInt!
+  daoStagedEsdLocked: BigInt!
 
   lpBondedTotal: BigInt!
   lpBondedFrozen: BigInt!
@@ -40,11 +41,11 @@ type EpochSnapshot @entity {
 type FundsToBeFrozen @entity {
   id: ID!
   epoch: BigInt!
-  daoStagedFluidToFrozen: BigInt!
-  daoStagedLockedToFrozen: BigInt!
-  daoBondedFluidToFrozen: BigInt!
-  daoBondedLockedToFrozen: BigInt!
-  lpStagedFluidToFrozen: BigInt!
+  daoStagedEsdFluidToFrozen: BigInt!
+  daoStagedEsdLockedToFrozen: BigInt!
+  daoBondedEsdsFluidToFrozen: BigInt!
+  daoBondedEsdsLockedToFrozen: BigInt!
+  lpStagedTokensFluidToFrozen: BigInt!
   lpBondedFluidToFrozen: BigInt!
 }
 
@@ -76,8 +77,8 @@ type AddressInfo @entity {
   esdBalance: BigInt!
 
   daoClaimable: BigInt!
-  daoBonded: BigInt!
-  daoStaged: BigInt!
+  daoBondedEsds: BigInt!
+  daoStagedEsd: BigInt!
   daoLockedUntilEpoch: BigInt!
   daoFluidUntilEpoch: BigInt!
 

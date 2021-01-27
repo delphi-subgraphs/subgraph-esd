@@ -105,76 +105,85 @@ export class EpochSnapshot extends Entity {
     this.set("bootstrappingAt", Value.fromBoolean(value));
   }
 
-  get daoBondedTotal(): BigInt {
-    let value = this.get("daoBondedTotal");
+  get daoBondedEsdTotal(): BigInt {
+    let value = this.get("daoBondedEsdTotal");
     return value.toBigInt();
   }
 
-  set daoBondedTotal(value: BigInt) {
-    this.set("daoBondedTotal", Value.fromBigInt(value));
+  set daoBondedEsdTotal(value: BigInt) {
+    this.set("daoBondedEsdTotal", Value.fromBigInt(value));
   }
 
-  get daoBondedFrozen(): BigInt {
-    let value = this.get("daoBondedFrozen");
+  get daoBondedEsdsTotal(): BigInt {
+    let value = this.get("daoBondedEsdsTotal");
     return value.toBigInt();
   }
 
-  set daoBondedFrozen(value: BigInt) {
-    this.set("daoBondedFrozen", Value.fromBigInt(value));
+  set daoBondedEsdsTotal(value: BigInt) {
+    this.set("daoBondedEsdsTotal", Value.fromBigInt(value));
   }
 
-  get daoBondedFluid(): BigInt {
-    let value = this.get("daoBondedFluid");
+  get daoBondedEsdsFrozen(): BigInt {
+    let value = this.get("daoBondedEsdsFrozen");
     return value.toBigInt();
   }
 
-  set daoBondedFluid(value: BigInt) {
-    this.set("daoBondedFluid", Value.fromBigInt(value));
+  set daoBondedEsdsFrozen(value: BigInt) {
+    this.set("daoBondedEsdsFrozen", Value.fromBigInt(value));
   }
 
-  get daoBondedLocked(): BigInt {
-    let value = this.get("daoBondedLocked");
+  get daoBondedEsdsFluid(): BigInt {
+    let value = this.get("daoBondedEsdsFluid");
     return value.toBigInt();
   }
 
-  set daoBondedLocked(value: BigInt) {
-    this.set("daoBondedLocked", Value.fromBigInt(value));
+  set daoBondedEsdsFluid(value: BigInt) {
+    this.set("daoBondedEsdsFluid", Value.fromBigInt(value));
   }
 
-  get daoStagedTotal(): BigInt {
-    let value = this.get("daoStagedTotal");
+  get daoBondedEsdsLocked(): BigInt {
+    let value = this.get("daoBondedEsdsLocked");
     return value.toBigInt();
   }
 
-  set daoStagedTotal(value: BigInt) {
-    this.set("daoStagedTotal", Value.fromBigInt(value));
+  set daoBondedEsdsLocked(value: BigInt) {
+    this.set("daoBondedEsdsLocked", Value.fromBigInt(value));
   }
 
-  get daoStagedFrozen(): BigInt {
-    let value = this.get("daoStagedFrozen");
+  get daoStagedEsdTotal(): BigInt {
+    let value = this.get("daoStagedEsdTotal");
     return value.toBigInt();
   }
 
-  set daoStagedFrozen(value: BigInt) {
-    this.set("daoStagedFrozen", Value.fromBigInt(value));
+  set daoStagedEsdTotal(value: BigInt) {
+    this.set("daoStagedEsdTotal", Value.fromBigInt(value));
   }
 
-  get daoStagedFluid(): BigInt {
-    let value = this.get("daoStagedFluid");
+  get daoStagedEsdFrozen(): BigInt {
+    let value = this.get("daoStagedEsdFrozen");
     return value.toBigInt();
   }
 
-  set daoStagedFluid(value: BigInt) {
-    this.set("daoStagedFluid", Value.fromBigInt(value));
+  set daoStagedEsdFrozen(value: BigInt) {
+    this.set("daoStagedEsdFrozen", Value.fromBigInt(value));
   }
 
-  get daoStagedLocked(): BigInt {
-    let value = this.get("daoStagedLocked");
+  get daoStagedEsdFluid(): BigInt {
+    let value = this.get("daoStagedEsdFluid");
     return value.toBigInt();
   }
 
-  set daoStagedLocked(value: BigInt) {
-    this.set("daoStagedLocked", Value.fromBigInt(value));
+  set daoStagedEsdFluid(value: BigInt) {
+    this.set("daoStagedEsdFluid", Value.fromBigInt(value));
+  }
+
+  get daoStagedEsdLocked(): BigInt {
+    let value = this.get("daoStagedEsdLocked");
+    return value.toBigInt();
+  }
+
+  set daoStagedEsdLocked(value: BigInt) {
+    this.set("daoStagedEsdLocked", Value.fromBigInt(value));
   }
 
   get lpBondedTotal(): BigInt {
@@ -334,49 +343,49 @@ export class FundsToBeFrozen extends Entity {
     this.set("epoch", Value.fromBigInt(value));
   }
 
-  get daoStagedFluidToFrozen(): BigInt {
-    let value = this.get("daoStagedFluidToFrozen");
+  get daoStagedEsdFluidToFrozen(): BigInt {
+    let value = this.get("daoStagedEsdFluidToFrozen");
     return value.toBigInt();
   }
 
-  set daoStagedFluidToFrozen(value: BigInt) {
-    this.set("daoStagedFluidToFrozen", Value.fromBigInt(value));
+  set daoStagedEsdFluidToFrozen(value: BigInt) {
+    this.set("daoStagedEsdFluidToFrozen", Value.fromBigInt(value));
   }
 
-  get daoStagedLockedToFrozen(): BigInt {
-    let value = this.get("daoStagedLockedToFrozen");
+  get daoStagedEsdLockedToFrozen(): BigInt {
+    let value = this.get("daoStagedEsdLockedToFrozen");
     return value.toBigInt();
   }
 
-  set daoStagedLockedToFrozen(value: BigInt) {
-    this.set("daoStagedLockedToFrozen", Value.fromBigInt(value));
+  set daoStagedEsdLockedToFrozen(value: BigInt) {
+    this.set("daoStagedEsdLockedToFrozen", Value.fromBigInt(value));
   }
 
-  get daoBondedFluidToFrozen(): BigInt {
-    let value = this.get("daoBondedFluidToFrozen");
+  get daoBondedEsdsFluidToFrozen(): BigInt {
+    let value = this.get("daoBondedEsdsFluidToFrozen");
     return value.toBigInt();
   }
 
-  set daoBondedFluidToFrozen(value: BigInt) {
-    this.set("daoBondedFluidToFrozen", Value.fromBigInt(value));
+  set daoBondedEsdsFluidToFrozen(value: BigInt) {
+    this.set("daoBondedEsdsFluidToFrozen", Value.fromBigInt(value));
   }
 
-  get daoBondedLockedToFrozen(): BigInt {
-    let value = this.get("daoBondedLockedToFrozen");
+  get daoBondedEsdsLockedToFrozen(): BigInt {
+    let value = this.get("daoBondedEsdsLockedToFrozen");
     return value.toBigInt();
   }
 
-  set daoBondedLockedToFrozen(value: BigInt) {
-    this.set("daoBondedLockedToFrozen", Value.fromBigInt(value));
+  set daoBondedEsdsLockedToFrozen(value: BigInt) {
+    this.set("daoBondedEsdsLockedToFrozen", Value.fromBigInt(value));
   }
 
-  get lpStagedFluidToFrozen(): BigInt {
-    let value = this.get("lpStagedFluidToFrozen");
+  get lpStagedTokensFluidToFrozen(): BigInt {
+    let value = this.get("lpStagedTokensFluidToFrozen");
     return value.toBigInt();
   }
 
-  set lpStagedFluidToFrozen(value: BigInt) {
-    this.set("lpStagedFluidToFrozen", Value.fromBigInt(value));
+  set lpStagedTokensFluidToFrozen(value: BigInt) {
+    this.set("lpStagedTokensFluidToFrozen", Value.fromBigInt(value));
   }
 
   get lpBondedFluidToFrozen(): BigInt {
@@ -629,22 +638,22 @@ export class AddressInfo extends Entity {
     this.set("daoClaimable", Value.fromBigInt(value));
   }
 
-  get daoBonded(): BigInt {
-    let value = this.get("daoBonded");
+  get daoBondedEsds(): BigInt {
+    let value = this.get("daoBondedEsds");
     return value.toBigInt();
   }
 
-  set daoBonded(value: BigInt) {
-    this.set("daoBonded", Value.fromBigInt(value));
+  set daoBondedEsds(value: BigInt) {
+    this.set("daoBondedEsds", Value.fromBigInt(value));
   }
 
-  get daoStaged(): BigInt {
-    let value = this.get("daoStaged");
+  get daoStagedEsd(): BigInt {
+    let value = this.get("daoStagedEsd");
     return value.toBigInt();
   }
 
-  set daoStaged(value: BigInt) {
-    this.set("daoStaged", Value.fromBigInt(value));
+  set daoStagedEsd(value: BigInt) {
+    this.set("daoStagedEsd", Value.fromBigInt(value));
   }
 
   get daoLockedUntilEpoch(): BigInt {
