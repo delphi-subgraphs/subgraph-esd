@@ -32,6 +32,9 @@ import { LpContract as DaoCallLpContract } from '../generated/DAOContract/LpCont
 import { DollarContract as DaoCallDollarContract } from '../generated/DAOContract/DollarContract'
 import { UniswapV2PairContract } from '../generated/DAOContract/UniswapV2PairContract'
 
+import {
+  getDaoExitLockupEpochs
+} from './implementations'
 
 /*
  *** CONSTANTS
@@ -49,9 +52,6 @@ let ADDRESS_ESD_LP4 = Address.fromString('0x4082D11E506e3250009A991061ACd2176077
 
 // epochs needed to expire the coupons
 let DAO_COUPON_EXPIRATION = BigInt.fromI32(90)
-
-// epochs an account stays fluid after bond/unbond
-let DAO_EXIT_LOCKUP_EPOCHS = BigInt.fromI32(15)
 
 /*
  *** DOLLAR
@@ -227,7 +227,7 @@ export function handleDaoBond(event: DaoBond): void {
   let deltaBondedEsds = event.params.value
   if(deltaStagedEsd > BI_ZERO || deltaBondedEsds > BI_ZERO) {
     let addressInfo = mustLoadAddressInfo(account, event.block, 'Bond')
-    applyDaoBondingDeltas(addressInfo, deltaStagedEsd, deltaBondedEsds)
+    applyDaoBondingDeltas(addressInfo, deltaStagedEsd, deltaBondedEsds, event.block)
   }
 }
 
@@ -237,18 +237,18 @@ export function handleDaoUnbond(event: DaoUnbond): void {
   let deltaBondedEsds = event.params.value.neg()
   if(deltaStagedEsd > BI_ZERO || deltaBondedEsds > BI_ZERO) {
     let addressInfo = mustLoadAddressInfo(account, event.block, 'Unbond')
-    applyDaoBondingDeltas(addressInfo, deltaStagedEsd, deltaBondedEsds)
+    applyDaoBondingDeltas(addressInfo, deltaStagedEsd, deltaBondedEsds, event.block)
   }
 }
 
 // Apply DAO Bond/Unbond from account represented by AddressInfo
 // Positive amount means bond, Negative amount means unbond
-function applyDaoBondingDeltas(addressInfo: AddressInfo, deltaStagedEsd: BigInt, deltaBondedEsds: BigInt): void {
+function applyDaoBondingDeltas(addressInfo: AddressInfo, deltaStagedEsd: BigInt, deltaBondedEsds: BigInt, block: ethereum.Block): void {
   let currentEpochSnapshot = epochSnapshotGetCurrent()
   let currentEpoch = currentEpochSnapshot.epoch
 
   let previousAccountStatus = addressInfoDaoStatus(addressInfo, currentEpoch)
-  let fluidUntilEpoch = currentEpoch + DAO_EXIT_LOCKUP_EPOCHS
+  let fluidUntilEpoch = currentEpoch + getDaoExitLockupEpochs(block)
 
   // Frozen/Fluid status: all account dao funds get (or stay) fluid
   // Modify aggregated values accordingly
@@ -262,12 +262,17 @@ function applyDaoBondingDeltas(addressInfo: AddressInfo, deltaStagedEsd: BigInt,
     previousFundsToBeFrozen.daoStagedEsdFluidToFrozen -= addressInfo.daoStagedEsd
     previousFundsToBeFrozen.daoBondedEsdsFluidToFrozen -= addressInfo.daoBondedEsds
     previousFundsToBeFrozen.save()
-  } else {
+  } else if(previousAccountStatus == "frozen") {
     // Account funds move from frozen to fluid
     currentEpochSnapshot.daoStagedEsdFrozen -= addressInfo.daoStagedEsd
     currentEpochSnapshot.daoBondedEsdsFrozen -= addressInfo.daoBondedEsds
     currentEpochSnapshot.daoStagedEsdFluid += (addressInfo.daoStagedEsd + deltaStagedEsd)
     currentEpochSnapshot.daoBondedEsdsFluid += (addressInfo.daoBondedEsds + deltaBondedEsds)
+  } else {
+    log.error(
+      "[{}]: Got Withdraw/Deposit event on fluid status for address {} at epoch {}", 
+      [block.number.toString(), addressInfo.id, currentEpoch.toString()]
+    )
   }
 
   // Staged/Bonded status: Delta staged goes from bonded esd to staged esd
