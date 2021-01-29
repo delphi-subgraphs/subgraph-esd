@@ -24,6 +24,7 @@ import {
   SupplyDecrease as DaoSupplyDecrease,
   SupplyIncrease as DaoSupplyIncrease,
   SupplyNeutral as DaoSupplyNeutral,
+  CouponExpiration as DaoCouponExpiration,
   Vote as DaoVote
 } from '../generated/DAOContract/DAOContract'
 
@@ -33,7 +34,9 @@ import { DollarContract as DaoCallDollarContract } from '../generated/DAOContrac
 import { UniswapV2PairContract } from '../generated/DAOContract/UniswapV2PairContract'
 
 import {
-  getDaoExitLockupEpochs
+  impDaoExitLockupEpochs,
+  impApplyBondedSupply,
+  impApplyCouponExpirationSupply,
 } from './implementations'
 
 /*
@@ -248,7 +251,7 @@ function applyDaoBondingDeltas(addressInfo: AddressInfo, deltaStagedEsd: BigInt,
   let currentEpoch = currentEpochSnapshot.epoch
 
   let previousAccountStatus = addressInfoDaoStatus(addressInfo, currentEpoch)
-  let fluidUntilEpoch = currentEpoch + getDaoExitLockupEpochs(block)
+  let fluidUntilEpoch = currentEpoch + impDaoExitLockupEpochs(block)
 
   // Frozen/Fluid status: all account dao funds get (or stay) fluid
   // Modify aggregated values accordingly
@@ -347,18 +350,21 @@ export function handleDaoSupplyIncrease(event: DaoSupplyIncrease): void {
   currentEpochSnapshot.oraclePrice = event.params.price
 
   let newRedeemable = event.params.newRedeemable
-  let lessDebt = event.params.lessDebt
   let newBonded = event.params.newBonded
-  
-
-
-
+  currentEpochSnapshot = impApplyBondedSupply(currentEpochSnapshot, newRedeemable, newBonded, event.block)
   currentEpochSnapshot.save()
 }
 
 export function handleDaoSupplyNeutral(event: DaoSupplyNeutral): void {
   let currentEpochSnapshot = epochSnapshotGetCurrent()
   currentEpochSnapshot.oraclePrice = BigInt.fromI32(1).pow(18)
+  currentEpochSnapshot.save()
+}
+
+export function handleDaoCouponExpiration(event: DaoCouponExpiration): void {
+  let newBonded = event.params.newBonded
+  let currentEpochSnapshot = epochSnapshotGetCurrent()
+  currentEpochSnapshot = impApplyCouponExpirationSupply(currentEpochSnapshot, newBonded, event.block)
   currentEpochSnapshot.save()
 }
 

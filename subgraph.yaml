@@ -42,12 +42,10 @@ dataSources:
         - Bond
         - Unbond
         - Vote
-        - CouponExpiration
-        - CouponPurchase
-        - CouponRedemption
         - SupplyDecrease
         - SupplyIncrease
         - SupplyNeutral
+        - CouponExpiration
       abis:
         - name: DaoContract
           file: ./abis/DaoContract.json
@@ -76,4 +74,6 @@ dataSources:
           handler: handleDaoSupplyIncrease
         - event: SupplyNeutral(indexed uint256)
           handler: handleDaoSupplyNeutral
+        - event: CouponExpiration(indexed uint256,uint256,uint256,uint256,uint256)
+          handler: handleDaoCouponExpiration
       file: ./src/mapping.ts
