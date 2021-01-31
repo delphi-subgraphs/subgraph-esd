@@ -59,14 +59,14 @@ let BI_ZERO = BigInt.fromI32(0)
 let ADDRESS_ZERO_HEX = '0x0000000000000000000000000000000000000000'
 let ADDRESS_UNISWAP_PAIR = Address.fromString('0x88ff79eb2bc5850f27315415da8685282c7610f9')
 let ADDRESS_ESD_DOLLAR = Address.fromString('0x36F3FD68E7325a35EB768F1AedaAe9EA0689d723')
-let ADDRESS_ESD_Dao = Address.fromString('0x443D2f2755DB5942601fa062Cc248aAA153313D3')
+let ADDRESS_ESD_DAO = Address.fromString('0x443D2f2755DB5942601fa062Cc248aAA153313D3')
 let ADDRESS_ESD_LP1 = Address.fromString('0xdF0Ae5504A48ab9f913F8490fBef1b9333A68e68')
 let ADDRESS_ESD_LP2 = Address.fromString('0xA5976897BC0081e3895013B08654DfEc50Bcb33F')
 let ADDRESS_ESD_LP3 = Address.fromString('0xBBDA9B2f267b94147cB5b51653237C2F1EE69054')
 let ADDRESS_ESD_LP4 = Address.fromString('0x4082D11E506e3250009A991061ACd2176077C88f')
 
 // epochs needed to expire the coupons
-let Dao_COUPON_EXPIRATION = BigInt.fromI32(90)
+let DAO_COUPON_EXPIRATION = BigInt.fromI32(90)
 
 /*
  *** DOLLAR
@@ -112,19 +112,19 @@ export function handleDollarTransfer(event: DollarTransfer): void {
 }
 
 /*
- *** Upgradeable
+ *** UPGRADEABLE
  */
 
 export function handleUpgradeableUpgraded(event: UpgradeableUpgraded): void {
   let meta = Meta.load("current")
   if (meta == null) {
     meta = new Meta("current")
-    meta.lpAddress = ""
+    meta.lpAddress = ADDRESS_ZERO_HEX 
   }
 
   // Check if there's a new pool for contract. If there is, add
   // to meta and start listening to its events
-  let daoContract = UpgradeableCallDaoContract.bind(ADDRESS_ESD_Dao)
+  let daoContract = UpgradeableCallDaoContract.bind(ADDRESS_ESD_DAO)
   let currentPool = daoContract.pool()
 
   if(currentPool.toHexString() != meta.lpAddress) {
@@ -140,7 +140,7 @@ export function handleUpgradeableUpgraded(event: UpgradeableUpgraded): void {
 
 
 /*
- *** Dao
+ *** DAO
  */
 
 export function handleDaoAdvance(event: DaoAdvance): void {
@@ -181,7 +181,7 @@ export function handleDaoAdvance(event: DaoAdvance): void {
     let dollarContract = DaoCallDollarContract.bind(ADDRESS_ESD_DOLLAR)
     let totalSupplyEsd = dollarContract.totalSupply()
     let totalLpEsd = dollarContract.balanceOf(ADDRESS_UNISWAP_PAIR)
-    let totalDaoEsd = dollarContract.balanceOf(ADDRESS_ESD_Dao);
+    let totalDaoEsd = dollarContract.balanceOf(ADDRESS_ESD_DAO);
 
     let esdSupplyHistory = new EsdSupplyHistory(historyEpoch.toString())
     esdSupplyHistory.epoch = historyEpoch
@@ -191,7 +191,7 @@ export function handleDaoAdvance(event: DaoAdvance): void {
     esdSupplyHistory.save()
 
     // lpTokenHistory
-    let daoContract = DaoContract.bind(ADDRESS_ESD_Dao)
+    let daoContract = DaoContract.bind(ADDRESS_ESD_DAO)
     let uniswapContract = UniswapV2PairContract.bind(ADDRESS_UNISWAP_PAIR)
     let totalLpUniV2 = uniswapContract.totalSupply()
     let totalLpBonded = BigInt.fromI32(0)
@@ -411,6 +411,10 @@ export function handleDaoCouponExpiration(event: DaoCouponExpiration): void {
   currentEpochSnapshot = impApplyCouponExpirationSupply(currentEpochSnapshot, newBonded, event.block)
   currentEpochSnapshot.save()
 }
+
+/*
+ *** ORACLE POOL
+ */
 
 /*
  *** HELPERS
