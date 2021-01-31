@@ -113,7 +113,7 @@ function getOraclePoolRatio(block: ethereum.Block): BigInt {
 }
 
 function getTreasuryShare(targetAmount: BigInt, block: ethereum.Block): BigInt {
-  return targetAmount * getTreasuryRatio(block) / BigInt.fromI32(1000)
+  return targetAmount * getTreasuryRatio(block) / BigInt.fromI32(10000)
 }
 
 function getTreasuryRatio(block: ethereum.Block): BigInt {
