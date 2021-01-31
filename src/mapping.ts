@@ -1,17 +1,22 @@
 import { BigInt, Address, ethereum, log } from "@graphprotocol/graph-ts"
 
 import { 
+  Meta,
   EpochSnapshot, 
   FundsToBeFrozen,
   EsdSupplyHistory,
-  LpTokenHistory,
+  LpUniV2TokenHistory,
   AddressInfo
 } from '../generated/schema'
 
 import { 
-  DollarContract ,
+  DollarContract,
   Transfer as DollarTransfer
-} from '../generated/DAOContract/DollarContract'
+} from '../generated/DaoContract/DollarContract'
+
+import { 
+  Upgraded as UpgradeableUpgraded
+} from '../generated/UpgradeableContract/UpgradeableContract'
 
 import {
   DaoContract,
@@ -25,13 +30,20 @@ import {
   SupplyIncrease as DaoSupplyIncrease,
   SupplyNeutral as DaoSupplyNeutral,
   CouponExpiration as DaoCouponExpiration,
-  Vote as DaoVote
-} from '../generated/DAOContract/DAOContract'
+} from '../generated/DaoContract/DaoContract'
 
 
-import { LpContract as DaoCallLpContract } from '../generated/DAOContract/LpContract'
-import { DollarContract as DaoCallDollarContract } from '../generated/DAOContract/DollarContract'
-import { UniswapV2PairContract } from '../generated/DAOContract/UniswapV2PairContract'
+// TODO(elfedy): Do we need to have a separate contract object per contract calling it? or
+// can they be the same entity on different contracts as long as they have the same name
+// and an abi is provided for them in subgraph.yaml
+import { LpContract as DaoCallLpContract } from '../generated/DaoContract/LpContract'
+import { DollarContract as DaoCallDollarContract } from '../generated/DaoContract/DollarContract'
+import { UniswapV2PairContract } from '../generated/DaoContract/UniswapV2PairContract'
+import {
+  DaoContract as UpgradeableCallDaoContract,
+} from '../generated/UpgradeableContract/DaoContract'
+
+import { LpContract as TemplateLpContract } from '../generated/templates'
 
 import {
   impDaoExitLockupEpochs,
@@ -47,14 +59,14 @@ let BI_ZERO = BigInt.fromI32(0)
 let ADDRESS_ZERO_HEX = '0x0000000000000000000000000000000000000000'
 let ADDRESS_UNISWAP_PAIR = Address.fromString('0x88ff79eb2bc5850f27315415da8685282c7610f9')
 let ADDRESS_ESD_DOLLAR = Address.fromString('0x36F3FD68E7325a35EB768F1AedaAe9EA0689d723')
-let ADDRESS_ESD_DAO = Address.fromString('0x443D2f2755DB5942601fa062Cc248aAA153313D3')
+let ADDRESS_ESD_Dao = Address.fromString('0x443D2f2755DB5942601fa062Cc248aAA153313D3')
 let ADDRESS_ESD_LP1 = Address.fromString('0xdF0Ae5504A48ab9f913F8490fBef1b9333A68e68')
 let ADDRESS_ESD_LP2 = Address.fromString('0xA5976897BC0081e3895013B08654DfEc50Bcb33F')
 let ADDRESS_ESD_LP3 = Address.fromString('0xBBDA9B2f267b94147cB5b51653237C2F1EE69054')
 let ADDRESS_ESD_LP4 = Address.fromString('0x4082D11E506e3250009A991061ACd2176077C88f')
 
 // epochs needed to expire the coupons
-let DAO_COUPON_EXPIRATION = BigInt.fromI32(90)
+let Dao_COUPON_EXPIRATION = BigInt.fromI32(90)
 
 /*
  *** DOLLAR
@@ -99,9 +111,36 @@ export function handleDollarTransfer(event: DollarTransfer): void {
   }
 }
 
+/*
+ *** Upgradeable
+ */
+
+export function handleUpgradeableUpgraded(event: UpgradeableUpgraded): void {
+  let meta = Meta.load("current")
+  if (meta == null) {
+    meta = new Meta("current")
+    meta.lpAddress = ""
+  }
+
+  // Check if there's a new pool for contract. If there is, add
+  // to meta and start listening to its events
+  let daoContract = UpgradeableCallDaoContract.bind(ADDRESS_ESD_Dao)
+  let currentPool = daoContract.pool()
+
+  if(currentPool.toHexString() != meta.lpAddress) {
+    log.info(
+      "[{}]: Creating new pool contract for address [{}]",
+      [event.block.number.toString(), currentPool.toHexString()]
+    )
+    meta.lpAddress = currentPool.toHexString()
+    meta.save()
+    TemplateLpContract.create(currentPool)
+  }
+}
+
 
 /*
- *** DAO
+ *** Dao
  */
 
 export function handleDaoAdvance(event: DaoAdvance): void {
@@ -142,19 +181,19 @@ export function handleDaoAdvance(event: DaoAdvance): void {
     let dollarContract = DaoCallDollarContract.bind(ADDRESS_ESD_DOLLAR)
     let totalSupplyEsd = dollarContract.totalSupply()
     let totalLpEsd = dollarContract.balanceOf(ADDRESS_UNISWAP_PAIR)
-    let totalDaoEsd = dollarContract.balanceOf(ADDRESS_ESD_DAO);
+    let totalDaoEsd = dollarContract.balanceOf(ADDRESS_ESD_Dao);
 
     let esdSupplyHistory = new EsdSupplyHistory(historyEpoch.toString())
     esdSupplyHistory.epoch = historyEpoch
     esdSupplyHistory.daoLockedTotal = totalDaoEsd 
-    esdSupplyHistory.lpLockedTotal = totalDaoEsd 
+    esdSupplyHistory.lpLockedTotal = totalLpEsd 
     esdSupplyHistory.totalSupply = totalSupplyEsd
     esdSupplyHistory.save()
 
     // lpTokenHistory
-    let daoContract = DaoContract.bind(ADDRESS_ESD_DAO)
+    let daoContract = DaoContract.bind(ADDRESS_ESD_Dao)
     let uniswapContract = UniswapV2PairContract.bind(ADDRESS_UNISWAP_PAIR)
-    let totalLpTokens = uniswapContract.totalSupply()
+    let totalLpUniV2 = uniswapContract.totalSupply()
     let totalLpBonded = BigInt.fromI32(0)
     let totalLpStaged = BigInt.fromI32(0)
     let lpContractAddress = daoContract.pool()
@@ -164,9 +203,9 @@ export function handleDaoAdvance(event: DaoAdvance): void {
       totalLpStaged = lpContract.totalStaged()
     }
 
-    let lpTokenHistory = new LpTokenHistory(historyEpoch.toString())
+    let lpTokenHistory = new LpUniV2TokenHistory(historyEpoch.toString())
     lpTokenHistory.epoch = historyEpoch
-    lpTokenHistory.totalSupply = totalLpTokens
+    lpTokenHistory.totalSupply = totalLpUniV2
     lpTokenHistory.totalBonded = totalLpBonded
     lpTokenHistory.totalStaged = totalLpStaged
     lpTokenHistory.save()
@@ -199,7 +238,7 @@ export function handleDaoWithdraw(event: DaoWithdraw): void {
   }
 }
 
-// Apply DAO Withdraw/Deposit from account represented by AddressInfo
+// Apply Dao Withdraw/Deposit from account represented by AddressInfo
 // Positive deltaStagedEsd amount means Deposit, Negative amount means Withdraw
 function applyDaoDepositDelta(addressInfo: AddressInfo, deltaStagedEsd: BigInt, block: ethereum.Block): void {
   let currentEpochSnapshot = epochSnapshotGetCurrent()
@@ -244,7 +283,7 @@ export function handleDaoUnbond(event: DaoUnbond): void {
   }
 }
 
-// Apply DAO Bond/Unbond from account represented by AddressInfo
+// Apply Dao Bond/Unbond from account represented by AddressInfo
 // Positive amount means bond, Negative amount means unbond
 function applyDaoBondingDeltas(addressInfo: AddressInfo, deltaStagedEsd: BigInt, deltaBondedEsds: BigInt, block: ethereum.Block): void {
   let currentEpochSnapshot = epochSnapshotGetCurrent()
@@ -312,6 +351,11 @@ export function handleDaoVote(event: DaoVote): void {
   let candidateStart = daoContract.startFor(voteCandidate)
   let candidatePeriod = daoContract.periodFor(voteCandidate)
   let newDaoLockedUntilEpoch = candidateStart + candidatePeriod
+
+  log.warning(
+    "[{}]: handling vote for candidate {} start {} period {} new locked {}",
+    [event.block.number.toString(), voteCandidate.toHexString(), candidateStart.toString(), candidatePeriod.toString(), newDaoLockedUntilEpoch.toString()]
+  )
 
   if(newDaoLockedUntilEpoch > addressInfo.daoLockedUntilEpoch) {
     let daoStatus = addressInfoDaoStatus(addressInfo, currentEpochSnapshot.epoch)
@@ -398,20 +442,17 @@ function epochSnapshotGetCurrent(): EpochSnapshot {
     epochSnapshot.daoStagedEsdFluid = BigInt.fromI32(0)
     epochSnapshot.daoStagedEsdLocked = BigInt.fromI32(0)
 
-    epochSnapshot.lpBondedTotal = BigInt.fromI32(0)
-    epochSnapshot.lpBondedFrozen = BigInt.fromI32(0)
-    epochSnapshot.lpBondedFluid = BigInt.fromI32(0)
-    epochSnapshot.lpBondedLocked = BigInt.fromI32(0)
+    epochSnapshot.lpBondedUniV2Total = BigInt.fromI32(0)
+    epochSnapshot.lpBondedUniV2Frozen = BigInt.fromI32(0)
+    epochSnapshot.lpBondedUniV2Fluid = BigInt.fromI32(0)
 
-    epochSnapshot.lpStagedTotal = BigInt.fromI32(0)
-    epochSnapshot.lpStagedFrozen = BigInt.fromI32(0)
-    epochSnapshot.lpStagedFluid = BigInt.fromI32(0)
-    epochSnapshot.lpStagedLocked = BigInt.fromI32(0)
+    epochSnapshot.lpStagedUniV2Total = BigInt.fromI32(0)
+    epochSnapshot.lpStagedUniV2Frozen = BigInt.fromI32(0)
+    epochSnapshot.lpStagedUniV2Fluid = BigInt.fromI32(0)
 
     epochSnapshot.lpClaimableTotal = BigInt.fromI32(0)
     epochSnapshot.lpClaimableFrozen = BigInt.fromI32(0)
     epochSnapshot.lpClaimableFluid = BigInt.fromI32(0)
-    epochSnapshot.lpClaimableLocked = BigInt.fromI32(0)
 
     epochSnapshot.lpRewardedTotal = BigInt.fromI32(0)
   }
@@ -442,20 +483,17 @@ function epochSnapshotCopyCurrent(currentEpochSnapshot: EpochSnapshot): void {
   epochSnapshot.daoStagedEsdFluid = currentEpochSnapshot.daoStagedEsdFluid
   epochSnapshot.daoStagedEsdLocked = currentEpochSnapshot.daoStagedEsdLocked
 
-  epochSnapshot.lpBondedTotal = currentEpochSnapshot.lpBondedTotal
-  epochSnapshot.lpBondedFrozen = currentEpochSnapshot.lpBondedFrozen
-  epochSnapshot.lpBondedFluid = currentEpochSnapshot.lpBondedFluid
-  epochSnapshot.lpBondedLocked = currentEpochSnapshot.lpBondedLocked
+  epochSnapshot.lpBondedUniV2Total = currentEpochSnapshot.lpBondedUniV2Total
+  epochSnapshot.lpBondedUniV2Frozen = currentEpochSnapshot.lpBondedUniV2Frozen
+  epochSnapshot.lpBondedUniV2Fluid = currentEpochSnapshot.lpBondedUniV2Fluid
 
-  epochSnapshot.lpStagedTotal = currentEpochSnapshot.lpStagedTotal
-  epochSnapshot.lpStagedFrozen = currentEpochSnapshot.lpStagedFrozen
-  epochSnapshot.lpStagedFluid = currentEpochSnapshot.lpStagedFluid
-  epochSnapshot.lpStagedLocked = currentEpochSnapshot.lpStagedLocked
+  epochSnapshot.lpStagedUniV2Total = currentEpochSnapshot.lpStagedUniV2Total
+  epochSnapshot.lpStagedUniV2Frozen = currentEpochSnapshot.lpStagedUniV2Frozen
+  epochSnapshot.lpStagedUniV2Fluid = currentEpochSnapshot.lpStagedUniV2Fluid
 
   epochSnapshot.lpClaimableTotal = currentEpochSnapshot.lpClaimableTotal
   epochSnapshot.lpClaimableFrozen = currentEpochSnapshot.lpClaimableFrozen
   epochSnapshot.lpClaimableFluid = currentEpochSnapshot.lpClaimableFluid
-  epochSnapshot.lpClaimableLocked = currentEpochSnapshot.lpClaimableLocked
 
   epochSnapshot.lpRewardedTotal = currentEpochSnapshot.lpRewardedTotal
 
@@ -472,8 +510,8 @@ function fundsToBeFrozenForEpoch(epoch: BigInt): FundsToBeFrozen {
     fundsToBeFrozen.daoStagedEsdLockedToFrozen = BigInt.fromI32(0)
     fundsToBeFrozen.daoBondedEsdsFluidToFrozen = BigInt.fromI32(0)
     fundsToBeFrozen.daoBondedEsdsLockedToFrozen = BigInt.fromI32(0)
-    fundsToBeFrozen.lpStagedTokensFluidToFrozen = BigInt.fromI32(0)
-    fundsToBeFrozen.lpBondedFluidToFrozen = BigInt.fromI32(0)
+    fundsToBeFrozen.lpStagedUniV2FluidToFrozen = BigInt.fromI32(0)
+    fundsToBeFrozen.lpBondedUniV2FluidToFrozen = BigInt.fromI32(0)
   }
 
   return <FundsToBeFrozen>fundsToBeFrozen
@@ -483,16 +521,16 @@ function addressInfoNew(id: string): AddressInfo {
   let addressInfo = new AddressInfo(id) 
 
   addressInfo.esdBalance = BigInt.fromI32(0)
+  addressInfo.uniV2Balance = BigInt.fromI32(0)
 
-  addressInfo.daoClaimable = BigInt.fromI32(0)
   addressInfo.daoBondedEsds = BigInt.fromI32(0)
   addressInfo.daoStagedEsd = BigInt.fromI32(0)
   addressInfo.daoLockedUntilEpoch = BigInt.fromI32(0)
   addressInfo.daoFluidUntilEpoch = BigInt.fromI32(0)
 
-  addressInfo.lpTotalBalance = BigInt.fromI32(0)
-  addressInfo.lpBonded = BigInt.fromI32(0)
-  addressInfo.lpStaged = BigInt.fromI32(0)
+  addressInfo.lpBondedUniV2 = BigInt.fromI32(0)
+  addressInfo.lpStagedUniV2 = BigInt.fromI32(0)
+  addressInfo.lpClaimable = BigInt.fromI32(0)
   addressInfo.lpRewarded = BigInt.fromI32(0)
   addressInfo.lpFluidUntilEpoch = BigInt.fromI32(0)
 

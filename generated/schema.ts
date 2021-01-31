@@ -12,6 +12,46 @@ import {
   BigDecimal
 } from "@graphprotocol/graph-ts";
 
+export class Meta extends Entity {
+  constructor(id: string) {
+    super();
+    this.set("id", Value.fromString(id));
+  }
+
+  save(): void {
+    let id = this.get("id");
+    assert(id !== null, "Cannot save Meta entity without an ID");
+    assert(
+      id.kind == ValueKind.STRING,
+      "Cannot save Meta entity with non-string ID. " +
+        'Considering using .toHex() to convert the "id" to a string.'
+    );
+    store.set("Meta", id.toString(), this);
+  }
+
+  static load(id: string): Meta | null {
+    return store.get("Meta", id) as Meta | null;
+  }
+
+  get id(): string {
+    let value = this.get("id");
+    return value.toString();
+  }
+
+  set id(value: string) {
+    this.set("id", Value.fromString(value));
+  }
+
+  get lpAddress(): string {
+    let value = this.get("lpAddress");
+    return value.toString();
+  }
+
+  set lpAddress(value: string) {
+    this.set("lpAddress", Value.fromString(value));
+  }
+}
+
 export class EpochSnapshot extends Entity {
   constructor(id: string) {
     super();
@@ -195,76 +235,58 @@ export class EpochSnapshot extends Entity {
     this.set("daoStagedEsdLocked", Value.fromBigInt(value));
   }
 
-  get lpBondedTotal(): BigInt {
-    let value = this.get("lpBondedTotal");
+  get lpBondedUniV2Total(): BigInt {
+    let value = this.get("lpBondedUniV2Total");
     return value.toBigInt();
   }
 
-  set lpBondedTotal(value: BigInt) {
-    this.set("lpBondedTotal", Value.fromBigInt(value));
+  set lpBondedUniV2Total(value: BigInt) {
+    this.set("lpBondedUniV2Total", Value.fromBigInt(value));
   }
 
-  get lpBondedFrozen(): BigInt {
-    let value = this.get("lpBondedFrozen");
+  get lpBondedUniV2Frozen(): BigInt {
+    let value = this.get("lpBondedUniV2Frozen");
     return value.toBigInt();
   }
 
-  set lpBondedFrozen(value: BigInt) {
-    this.set("lpBondedFrozen", Value.fromBigInt(value));
+  set lpBondedUniV2Frozen(value: BigInt) {
+    this.set("lpBondedUniV2Frozen", Value.fromBigInt(value));
   }
 
-  get lpBondedFluid(): BigInt {
-    let value = this.get("lpBondedFluid");
+  get lpBondedUniV2Fluid(): BigInt {
+    let value = this.get("lpBondedUniV2Fluid");
     return value.toBigInt();
   }
 
-  set lpBondedFluid(value: BigInt) {
-    this.set("lpBondedFluid", Value.fromBigInt(value));
+  set lpBondedUniV2Fluid(value: BigInt) {
+    this.set("lpBondedUniV2Fluid", Value.fromBigInt(value));
   }
 
-  get lpBondedLocked(): BigInt {
-    let value = this.get("lpBondedLocked");
+  get lpStagedUniV2Total(): BigInt {
+    let value = this.get("lpStagedUniV2Total");
     return value.toBigInt();
   }
 
-  set lpBondedLocked(value: BigInt) {
-    this.set("lpBondedLocked", Value.fromBigInt(value));
+  set lpStagedUniV2Total(value: BigInt) {
+    this.set("lpStagedUniV2Total", Value.fromBigInt(value));
   }
 
-  get lpStagedTotal(): BigInt {
-    let value = this.get("lpStagedTotal");
+  get lpStagedUniV2Frozen(): BigInt {
+    let value = this.get("lpStagedUniV2Frozen");
     return value.toBigInt();
   }
 
-  set lpStagedTotal(value: BigInt) {
-    this.set("lpStagedTotal", Value.fromBigInt(value));
+  set lpStagedUniV2Frozen(value: BigInt) {
+    this.set("lpStagedUniV2Frozen", Value.fromBigInt(value));
   }
 
-  get lpStagedFrozen(): BigInt {
-    let value = this.get("lpStagedFrozen");
+  get lpStagedUniV2Fluid(): BigInt {
+    let value = this.get("lpStagedUniV2Fluid");
     return value.toBigInt();
   }
 
-  set lpStagedFrozen(value: BigInt) {
-    this.set("lpStagedFrozen", Value.fromBigInt(value));
-  }
-
-  get lpStagedFluid(): BigInt {
-    let value = this.get("lpStagedFluid");
-    return value.toBigInt();
-  }
-
-  set lpStagedFluid(value: BigInt) {
-    this.set("lpStagedFluid", Value.fromBigInt(value));
-  }
-
-  get lpStagedLocked(): BigInt {
-    let value = this.get("lpStagedLocked");
-    return value.toBigInt();
-  }
-
-  set lpStagedLocked(value: BigInt) {
-    this.set("lpStagedLocked", Value.fromBigInt(value));
+  set lpStagedUniV2Fluid(value: BigInt) {
+    this.set("lpStagedUniV2Fluid", Value.fromBigInt(value));
   }
 
   get lpClaimableTotal(): BigInt {
@@ -292,15 +314,6 @@ export class EpochSnapshot extends Entity {
 
   set lpClaimableFluid(value: BigInt) {
     this.set("lpClaimableFluid", Value.fromBigInt(value));
-  }
-
-  get lpClaimableLocked(): BigInt {
-    let value = this.get("lpClaimableLocked");
-    return value.toBigInt();
-  }
-
-  set lpClaimableLocked(value: BigInt) {
-    this.set("lpClaimableLocked", Value.fromBigInt(value));
   }
 
   get lpRewardedTotal(): BigInt {
@@ -388,22 +401,22 @@ export class FundsToBeFrozen extends Entity {
     this.set("daoBondedEsdsLockedToFrozen", Value.fromBigInt(value));
   }
 
-  get lpStagedTokensFluidToFrozen(): BigInt {
-    let value = this.get("lpStagedTokensFluidToFrozen");
+  get lpStagedUniV2FluidToFrozen(): BigInt {
+    let value = this.get("lpStagedUniV2FluidToFrozen");
     return value.toBigInt();
   }
 
-  set lpStagedTokensFluidToFrozen(value: BigInt) {
-    this.set("lpStagedTokensFluidToFrozen", Value.fromBigInt(value));
+  set lpStagedUniV2FluidToFrozen(value: BigInt) {
+    this.set("lpStagedUniV2FluidToFrozen", Value.fromBigInt(value));
   }
 
-  get lpBondedFluidToFrozen(): BigInt {
-    let value = this.get("lpBondedFluidToFrozen");
+  get lpBondedUniV2FluidToFrozen(): BigInt {
+    let value = this.get("lpBondedUniV2FluidToFrozen");
     return value.toBigInt();
   }
 
-  set lpBondedFluidToFrozen(value: BigInt) {
-    this.set("lpBondedFluidToFrozen", Value.fromBigInt(value));
+  set lpBondedUniV2FluidToFrozen(value: BigInt) {
+    this.set("lpBondedUniV2FluidToFrozen", Value.fromBigInt(value));
   }
 }
 
@@ -444,15 +457,6 @@ export class FutureClaimableEsd extends Entity {
 
   set epoch(value: BigInt) {
     this.set("epoch", Value.fromBigInt(value));
-  }
-
-  get daoClaimableTotal(): BigInt {
-    let value = this.get("daoClaimableTotal");
-    return value.toBigInt();
-  }
-
-  set daoClaimableTotal(value: BigInt) {
-    this.set("daoClaimableTotal", Value.fromBigInt(value));
   }
 
   get lpClaimableTotal(): BigInt {
@@ -532,7 +536,7 @@ export class EsdSupplyHistory extends Entity {
   }
 }
 
-export class LpTokenHistory extends Entity {
+export class LpUniV2TokenHistory extends Entity {
   constructor(id: string) {
     super();
     this.set("id", Value.fromString(id));
@@ -540,17 +544,17 @@ export class LpTokenHistory extends Entity {
 
   save(): void {
     let id = this.get("id");
-    assert(id !== null, "Cannot save LpTokenHistory entity without an ID");
+    assert(id !== null, "Cannot save LpUniV2TokenHistory entity without an ID");
     assert(
       id.kind == ValueKind.STRING,
-      "Cannot save LpTokenHistory entity with non-string ID. " +
+      "Cannot save LpUniV2TokenHistory entity with non-string ID. " +
         'Considering using .toHex() to convert the "id" to a string.'
     );
-    store.set("LpTokenHistory", id.toString(), this);
+    store.set("LpUniV2TokenHistory", id.toString(), this);
   }
 
-  static load(id: string): LpTokenHistory | null {
-    return store.get("LpTokenHistory", id) as LpTokenHistory | null;
+  static load(id: string): LpUniV2TokenHistory | null {
+    return store.get("LpUniV2TokenHistory", id) as LpUniV2TokenHistory | null;
   }
 
   get id(): string {
@@ -638,13 +642,13 @@ export class AddressInfo extends Entity {
     this.set("esdBalance", Value.fromBigInt(value));
   }
 
-  get daoClaimable(): BigInt {
-    let value = this.get("daoClaimable");
+  get uniV2Balance(): BigInt {
+    let value = this.get("uniV2Balance");
     return value.toBigInt();
   }
 
-  set daoClaimable(value: BigInt) {
-    this.set("daoClaimable", Value.fromBigInt(value));
+  set uniV2Balance(value: BigInt) {
+    this.set("uniV2Balance", Value.fromBigInt(value));
   }
 
   get daoBondedEsds(): BigInt {
@@ -683,31 +687,31 @@ export class AddressInfo extends Entity {
     this.set("daoFluidUntilEpoch", Value.fromBigInt(value));
   }
 
-  get lpTotalBalance(): BigInt {
-    let value = this.get("lpTotalBalance");
+  get lpBondedUniV2(): BigInt {
+    let value = this.get("lpBondedUniV2");
     return value.toBigInt();
   }
 
-  set lpTotalBalance(value: BigInt) {
-    this.set("lpTotalBalance", Value.fromBigInt(value));
+  set lpBondedUniV2(value: BigInt) {
+    this.set("lpBondedUniV2", Value.fromBigInt(value));
   }
 
-  get lpBonded(): BigInt {
-    let value = this.get("lpBonded");
+  get lpStagedUniV2(): BigInt {
+    let value = this.get("lpStagedUniV2");
     return value.toBigInt();
   }
 
-  set lpBonded(value: BigInt) {
-    this.set("lpBonded", Value.fromBigInt(value));
+  set lpStagedUniV2(value: BigInt) {
+    this.set("lpStagedUniV2", Value.fromBigInt(value));
   }
 
-  get lpStaged(): BigInt {
-    let value = this.get("lpStaged");
+  get lpClaimable(): BigInt {
+    let value = this.get("lpClaimable");
     return value.toBigInt();
   }
 
-  set lpStaged(value: BigInt) {
-    this.set("lpStaged", Value.fromBigInt(value));
+  set lpClaimable(value: BigInt) {
+    this.set("lpClaimable", Value.fromBigInt(value));
   }
 
   get lpRewarded(): BigInt {

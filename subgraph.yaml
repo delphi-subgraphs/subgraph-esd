@@ -25,6 +25,28 @@ dataSources:
           handler: handleDollarTransfer
       file: ./src/mapping.ts
   - kind: ethereum/contract
+    name: UpgradeableContract
+    network: mainnet
+    source:
+      address: "0x443D2f2755DB5942601fa062Cc248aAA153313D3"
+      abi: UpgradeableContract
+      startBlock: 10722554
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.4
+      language: wasm/assemblyscript
+      entities:
+        - Upgraded
+      abis:
+        - name: UpgradeableContract
+          file: ./abis/UpgradeableContract.json
+        - name: DaoContract
+          file: ./abis/DaoContract.json
+      eventHandlers:
+        - event: Upgraded(indexed address)
+          handler: handleUpgradeableUpgraded
+      file: ./src/mapping.ts
+  - kind: ethereum/contract
     name: DaoContract
     network: mainnet
     source:
@@ -76,4 +98,32 @@ dataSources:
           handler: handleDaoSupplyNeutral
         - event: CouponExpiration(indexed uint256,uint256,uint256,uint256,uint256)
           handler: handleDaoCouponExpiration
+      file: ./src/mapping.ts
+templates:
+  - kind: ethereum/contract
+    name: LpContract
+    network: mainnet
+    source:
+      abi: LpContract
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.4
+      language: wasm/assemblyscript
+      entities:
+        - Deposit
+        - Withdraw
+        - Bond
+        - Unbond
+      abis:
+        - name: LpContract
+          file: ./abis/LpContract.json
+      eventHandlers:
+        - event: Deposit(indexed address,uint256)
+          handler: handleDepositLP
+        - event: Withdraw(indexed address,uint256)
+          handler: handleWithdrawLP
+        - event: Bond(indexed address,uint256,uint256)
+          handler: handleBondLP
+        - event: Unbond(indexed address,uint256,uint256,uint256)
+          handler: handleUnbondLP
       file: ./src/mapping.ts

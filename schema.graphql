@@ -1,3 +1,8 @@
+type Meta @entity {
+  id: ID!
+  lpAddress: String!
+}
+
 type EpochSnapshot @entity {
   id: ID!
   epoch: BigInt!
@@ -21,20 +26,17 @@ type EpochSnapshot @entity {
   daoStagedEsdFluid: BigInt!
   daoStagedEsdLocked: BigInt!
 
-  lpBondedTotal: BigInt!
-  lpBondedFrozen: BigInt!
-  lpBondedFluid: BigInt!
-  lpBondedLocked: BigInt!
+  lpBondedUniV2Total: BigInt!
+  lpBondedUniV2Frozen: BigInt!
+  lpBondedUniV2Fluid: BigInt!
 
-  lpStagedTotal: BigInt!
-  lpStagedFrozen: BigInt!
-  lpStagedFluid: BigInt!
-  lpStagedLocked: BigInt!
+  lpStagedUniV2Total: BigInt!
+  lpStagedUniV2Frozen: BigInt!
+  lpStagedUniV2Fluid: BigInt!
 
   lpClaimableTotal: BigInt!
   lpClaimableFrozen: BigInt!
   lpClaimableFluid: BigInt!
-  lpClaimableLocked: BigInt!
 
   lpRewardedTotal: BigInt!
 }
@@ -46,14 +48,13 @@ type FundsToBeFrozen @entity {
   daoStagedEsdLockedToFrozen: BigInt!
   daoBondedEsdsFluidToFrozen: BigInt!
   daoBondedEsdsLockedToFrozen: BigInt!
-  lpStagedTokensFluidToFrozen: BigInt!
-  lpBondedFluidToFrozen: BigInt!
+  lpStagedUniV2FluidToFrozen: BigInt!
+  lpBondedUniV2FluidToFrozen: BigInt!
 }
 
 type FutureClaimableEsd @entity {
   id: ID!
   epoch: BigInt!
-  daoClaimableTotal: BigInt!
   lpClaimableTotal: BigInt!
 }
 
@@ -65,7 +66,7 @@ type EsdSupplyHistory @entity {
   totalSupply: BigInt!
 }
 
-type LpTokenHistory @entity {
+type LpUniV2TokenHistory @entity {
   id: ID!
   epoch: BigInt!
   totalStaged: BigInt!
@@ -76,16 +77,16 @@ type LpTokenHistory @entity {
 type AddressInfo @entity {
   id: ID!
   esdBalance: BigInt!
+  uniV2Balance: BigInt!
 
-  daoClaimable: BigInt!
   daoBondedEsds: BigInt!
   daoStagedEsd: BigInt!
   daoLockedUntilEpoch: BigInt!
   daoFluidUntilEpoch: BigInt!
 
-  lpTotalBalance: BigInt!
-  lpBonded: BigInt!
-  lpStaged: BigInt!
+  lpBondedUniV2: BigInt!
+  lpStagedUniV2: BigInt!
+  lpClaimable: BigInt!
   lpRewarded: BigInt!
   lpFluidUntilEpoch: BigInt!
 }
