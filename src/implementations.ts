@@ -31,7 +31,7 @@ export function impDaoExitLockupEpochs(block: ethereum.Block): BigInt {
   }
 }
 
-export function getLpExitLockupEpochs(block: ethereum.Block): BigInt {
+export function impLpExitLockupEpochs(block: ethereum.Block): BigInt {
   if(block.number < PROPOSAL9_BLOCK) {
     return BigInt.fromI32(1)
   } else {

@@ -5,26 +5,6 @@ schema:
   file: ./schema.graphql
 dataSources:
   - kind: ethereum/contract
-    name: DollarContract
-    network: mainnet
-    source:
-      address: "0x36F3FD68E7325a35EB768F1AedaAe9EA0689d723"
-      abi: DollarContract
-      startBlock: 10722554
-    mapping:
-      kind: ethereum/events
-      apiVersion: 0.0.4
-      language: wasm/assemblyscript
-      entities:
-        - Transfer
-      abis:
-        - name: DollarContract
-          file: ./abis/DollarContract.json
-      eventHandlers:
-        - event: Transfer(indexed address,indexed address,uint256)
-          handler: handleDollarTransfer
-      file: ./src/mapping.ts
-  - kind: ethereum/contract
     name: UpgradeableContract
     network: mainnet
     source:
@@ -45,6 +25,26 @@ dataSources:
       eventHandlers:
         - event: Upgraded(indexed address)
           handler: handleUpgradeableUpgraded
+      file: ./src/mapping.ts
+  - kind: ethereum/contract
+    name: DollarContract
+    network: mainnet
+    source:
+      address: "0x36F3FD68E7325a35EB768F1AedaAe9EA0689d723"
+      abi: DollarContract
+      startBlock: 10722554
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.4
+      language: wasm/assemblyscript
+      entities:
+        - Transfer
+      abis:
+        - name: DollarContract
+          file: ./abis/DollarContract.json
+      eventHandlers:
+        - event: Transfer(indexed address,indexed address,uint256)
+          handler: handleDollarTransfer
       file: ./src/mapping.ts
   - kind: ethereum/contract
     name: DaoContract
@@ -112,18 +112,24 @@ templates:
       entities:
         - Deposit
         - Withdraw
+        - Provide
         - Bond
         - Unbond
+        - Claim
       abis:
         - name: LpContract
           file: ./abis/LpContract.json
       eventHandlers:
         - event: Deposit(indexed address,uint256)
-          handler: handleDepositLP
+          handler: handleLpDeposit
         - event: Withdraw(indexed address,uint256)
-          handler: handleWithdrawLP
+          handler: handleLpWithdraw
+        - event: Provide(indexed address,uint256,uint256,uint256)
+          handler: handleLpProvide
         - event: Bond(indexed address,uint256,uint256)
-          handler: handleBondLP
+          handler: handleLpBond
         - event: Unbond(indexed address,uint256,uint256,uint256)
-          handler: handleUnbondLP
+          handler: handleLpUnbond
+        - event: Claim(indexed address,uint256)
+          handler: handleLpClaim
       file: ./src/mapping.ts

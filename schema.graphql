@@ -34,11 +34,11 @@ type EpochSnapshot @entity {
   lpStagedUniV2Frozen: BigInt!
   lpStagedUniV2Fluid: BigInt!
 
-  lpClaimableTotal: BigInt!
-  lpClaimableFrozen: BigInt!
-  lpClaimableFluid: BigInt!
+  lpClaimableEsdTotal: BigInt!
+  lpClaimableEsdFrozen: BigInt!
+  lpClaimableEsdFluid: BigInt!
 
-  lpRewardedTotal: BigInt!
+  lpRewardedEsdTotal: BigInt!
 }
 
 type FundsToBeFrozen @entity {
@@ -50,12 +50,7 @@ type FundsToBeFrozen @entity {
   daoBondedEsdsLockedToFrozen: BigInt!
   lpStagedUniV2FluidToFrozen: BigInt!
   lpBondedUniV2FluidToFrozen: BigInt!
-}
-
-type FutureClaimableEsd @entity {
-  id: ID!
-  epoch: BigInt!
-  lpClaimableTotal: BigInt!
+  lpClaimableEsdFluidToFrozen: BigInt!
 }
 
 type EsdSupplyHistory @entity {
@@ -86,8 +81,7 @@ type AddressInfo @entity {
 
   lpBondedUniV2: BigInt!
   lpStagedUniV2: BigInt!
-  lpClaimable: BigInt!
-  lpRewarded: BigInt!
+  lpClaimableEsd: BigInt!
   lpFluidUntilEpoch: BigInt!
 }
 

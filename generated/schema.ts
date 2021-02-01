@@ -289,40 +289,40 @@ export class EpochSnapshot extends Entity {
     this.set("lpStagedUniV2Fluid", Value.fromBigInt(value));
   }
 
-  get lpClaimableTotal(): BigInt {
-    let value = this.get("lpClaimableTotal");
+  get lpClaimableEsdTotal(): BigInt {
+    let value = this.get("lpClaimableEsdTotal");
     return value.toBigInt();
   }
 
-  set lpClaimableTotal(value: BigInt) {
-    this.set("lpClaimableTotal", Value.fromBigInt(value));
+  set lpClaimableEsdTotal(value: BigInt) {
+    this.set("lpClaimableEsdTotal", Value.fromBigInt(value));
   }
 
-  get lpClaimableFrozen(): BigInt {
-    let value = this.get("lpClaimableFrozen");
+  get lpClaimableEsdFrozen(): BigInt {
+    let value = this.get("lpClaimableEsdFrozen");
     return value.toBigInt();
   }
 
-  set lpClaimableFrozen(value: BigInt) {
-    this.set("lpClaimableFrozen", Value.fromBigInt(value));
+  set lpClaimableEsdFrozen(value: BigInt) {
+    this.set("lpClaimableEsdFrozen", Value.fromBigInt(value));
   }
 
-  get lpClaimableFluid(): BigInt {
-    let value = this.get("lpClaimableFluid");
+  get lpClaimableEsdFluid(): BigInt {
+    let value = this.get("lpClaimableEsdFluid");
     return value.toBigInt();
   }
 
-  set lpClaimableFluid(value: BigInt) {
-    this.set("lpClaimableFluid", Value.fromBigInt(value));
+  set lpClaimableEsdFluid(value: BigInt) {
+    this.set("lpClaimableEsdFluid", Value.fromBigInt(value));
   }
 
-  get lpRewardedTotal(): BigInt {
-    let value = this.get("lpRewardedTotal");
+  get lpRewardedEsdTotal(): BigInt {
+    let value = this.get("lpRewardedEsdTotal");
     return value.toBigInt();
   }
 
-  set lpRewardedTotal(value: BigInt) {
-    this.set("lpRewardedTotal", Value.fromBigInt(value));
+  set lpRewardedEsdTotal(value: BigInt) {
+    this.set("lpRewardedEsdTotal", Value.fromBigInt(value));
   }
 }
 
@@ -418,54 +418,14 @@ export class FundsToBeFrozen extends Entity {
   set lpBondedUniV2FluidToFrozen(value: BigInt) {
     this.set("lpBondedUniV2FluidToFrozen", Value.fromBigInt(value));
   }
-}
 
-export class FutureClaimableEsd extends Entity {
-  constructor(id: string) {
-    super();
-    this.set("id", Value.fromString(id));
-  }
-
-  save(): void {
-    let id = this.get("id");
-    assert(id !== null, "Cannot save FutureClaimableEsd entity without an ID");
-    assert(
-      id.kind == ValueKind.STRING,
-      "Cannot save FutureClaimableEsd entity with non-string ID. " +
-        'Considering using .toHex() to convert the "id" to a string.'
-    );
-    store.set("FutureClaimableEsd", id.toString(), this);
-  }
-
-  static load(id: string): FutureClaimableEsd | null {
-    return store.get("FutureClaimableEsd", id) as FutureClaimableEsd | null;
-  }
-
-  get id(): string {
-    let value = this.get("id");
-    return value.toString();
-  }
-
-  set id(value: string) {
-    this.set("id", Value.fromString(value));
-  }
-
-  get epoch(): BigInt {
-    let value = this.get("epoch");
+  get lpClaimableEsdFluidToFrozen(): BigInt {
+    let value = this.get("lpClaimableEsdFluidToFrozen");
     return value.toBigInt();
   }
 
-  set epoch(value: BigInt) {
-    this.set("epoch", Value.fromBigInt(value));
-  }
-
-  get lpClaimableTotal(): BigInt {
-    let value = this.get("lpClaimableTotal");
-    return value.toBigInt();
-  }
-
-  set lpClaimableTotal(value: BigInt) {
-    this.set("lpClaimableTotal", Value.fromBigInt(value));
+  set lpClaimableEsdFluidToFrozen(value: BigInt) {
+    this.set("lpClaimableEsdFluidToFrozen", Value.fromBigInt(value));
   }
 }
 
@@ -705,22 +665,13 @@ export class AddressInfo extends Entity {
     this.set("lpStagedUniV2", Value.fromBigInt(value));
   }
 
-  get lpClaimable(): BigInt {
-    let value = this.get("lpClaimable");
+  get lpClaimableEsd(): BigInt {
+    let value = this.get("lpClaimableEsd");
     return value.toBigInt();
   }
 
-  set lpClaimable(value: BigInt) {
-    this.set("lpClaimable", Value.fromBigInt(value));
-  }
-
-  get lpRewarded(): BigInt {
-    let value = this.get("lpRewarded");
-    return value.toBigInt();
-  }
-
-  set lpRewarded(value: BigInt) {
-    this.set("lpRewarded", Value.fromBigInt(value));
+  set lpClaimableEsd(value: BigInt) {
+    this.set("lpClaimableEsd", Value.fromBigInt(value));
   }
 
   get lpFluidUntilEpoch(): BigInt {

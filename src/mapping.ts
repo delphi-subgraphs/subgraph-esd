@@ -18,6 +18,7 @@ import {
   Upgraded as UpgradeableUpgraded
 } from '../generated/UpgradeableContract/UpgradeableContract'
 
+// Dao Contract
 import {
   DaoContract,
   Advance as DaoAdvance,
@@ -37,16 +38,30 @@ import {
 // can they be the same entity on different contracts as long as they have the same name
 // and an abi is provided for them in subgraph.yaml
 import { LpContract as DaoCallLpContract } from '../generated/DaoContract/LpContract'
+
 import { DollarContract as DaoCallDollarContract } from '../generated/DaoContract/DollarContract'
+
 import { UniswapV2PairContract } from '../generated/DaoContract/UniswapV2PairContract'
+
 import {
   DaoContract as UpgradeableCallDaoContract,
 } from '../generated/UpgradeableContract/DaoContract'
 
-import { LpContract as TemplateLpContract } from '../generated/templates'
+// LP Contract
+import { 
+  LpContract as TemplateLpContract,
+} from '../generated/templates'
+
+import { 
+  Deposit as LpDeposit,
+  Withdraw as LpWithdraw,
+  Bond as LpBond,  
+  Unbond as LpUnbond,
+} from '../generated/templates/LpContract/LpContract'
 
 import {
   impDaoExitLockupEpochs,
+  impLpExitLockupEpochs,
   impApplyBondedSupply,
   impApplyCouponExpirationSupply,
 } from './implementations'
@@ -267,7 +282,7 @@ export function handleDaoBond(event: DaoBond): void {
   let account = event.params.account
   let deltaStagedEsd = event.params.valueUnderlying.neg()
   let deltaBondedEsds = event.params.value
-  if(deltaStagedEsd > BI_ZERO || deltaBondedEsds > BI_ZERO) {
+  if(deltaStagedEsd < BI_ZERO || deltaBondedEsds > BI_ZERO) {
     let addressInfo = mustLoadAddressInfo(account, event.block, 'Bond')
     applyDaoBondingDeltas(addressInfo, deltaStagedEsd, deltaBondedEsds, event.block)
   }
@@ -416,6 +431,130 @@ export function handleDaoCouponExpiration(event: DaoCouponExpiration): void {
  *** ORACLE POOL
  */
 
+export function handleLpDeposit(event: LpDeposit): void {
+  let depositAmount = event.params.value
+  let depositAddress = event.params.account
+  if(depositAmount > BI_ZERO) {
+    let addressInfo = mustLoadAddressInfo(depositAddress, event.block, 'Deposit')
+    if(addressInfo == null) {
+      log.error(
+        '[{}]: Got deposit from previously non existing address {}',
+        [event.block.number.toString(), depositAddress.toHexString()]
+      )
+      return
+    }
+    applyLpDepositDelta(addressInfo, depositAmount, event.block)
+  }
+}
+
+export function handleLpWithdraw(event: LpWithdraw): void {
+  let withdrawAmount = event.params.value
+  let withdrawAddress = event.params.account
+  if(withdrawAmount > BI_ZERO) {
+    let addressInfo = mustLoadAddressInfo(withdrawAddress, event.block, 'Withdraw')
+    let deltaStagedUniV2 = withdrawAmount.neg()
+    applyDaoDepositDelta(addressInfo, deltaStagedUniV2, event.block)
+  }
+}
+
+// Apply Lp Withdraw/Deposit from account represented by AddressInfo
+// Positive deltaStagedUniV2 amount means Deposit, Negative amount means Withdraw
+function applyLpDepositDelta(addressInfo: AddressInfo, deltaStagedUniV2: BigInt, block: ethereum.Block): void {
+  let currentEpochSnapshot = epochSnapshotGetCurrent()
+
+  currentEpochSnapshot.lpStagedUniV2Total += deltaStagedUniV2
+  addressInfo.lpStagedUniV2 += deltaStagedUniV2
+  let accountStatus = addressInfoLpStatus(addressInfo, currentEpochSnapshot.epoch)
+  if (accountStatus == "fluid") {
+    log.error(
+      "[{}]: Got Withdraw/Deposit event on fluid status for address {} at epoch {}",
+      [block.number.toString(), addressInfo.id, currentEpochSnapshot.epoch.toString()]
+    )
+  } else {
+    currentEpochSnapshot.lpStagedUniV2Frozen += deltaStagedUniV2
+  }
+  currentEpochSnapshot.save()
+  addressInfo.save()
+}
+
+
+export function handleLpBond(event: LpBond): void {
+  let account = event.params.account
+  let deltaStagedUniV2 = event.params.value.neg()
+  if(deltaStagedUniV2 < BI_ZERO) {
+    let addressInfo = mustLoadAddressInfo(account, event.block, 'Bond')
+    applyLpBondingDeltas(addressInfo, deltaStagedUniV2, BI_ZERO, event.block)
+  }
+}
+
+export function handleLpUnbond(event: LpUnbond): void {
+  let account = event.params.account
+  let deltaStagedUniV2 = event.params.value.neg()
+  let newClaimableEsd = event.params.newClaimable
+  if(deltaStagedUniV2 > BI_ZERO) {
+    let addressInfo = mustLoadAddressInfo(account, event.block, 'Unbond')
+    applyLpBondingDeltas(addressInfo, deltaStagedUniV2, newClaimableEsd, event.block)
+  }
+}
+
+// Apply Lp Bond/Unbond from account represented by AddressInfo
+function applyLpBondingDeltas(addressInfo: AddressInfo, deltaStagedUniV2: BigInt, newClaimableEsd: BigInt, block: ethereum.Block): void {
+  let currentEpochSnapshot = epochSnapshotGetCurrent()
+  let currentEpoch = currentEpochSnapshot.epoch
+
+  let previousAccountStatus = addressInfoLpStatus(addressInfo, currentEpoch)
+  let fluidUntilEpoch = currentEpoch + impLpExitLockupEpochs(block)
+
+  // Frozen/Fluid status: all account dao funds get (or stay) fluid
+  // Modify aggregated values accordingly
+  if(previousAccountStatus == 'fluid') {
+    // Account funds stay fluid
+    currentEpochSnapshot.lpStagedUniV2Fluid += deltaStagedUniV2
+    currentEpochSnapshot.lpBondedUniV2Fluid -= deltaStagedUniV2
+
+    // Account funds will freeze on a later epoch now
+    let previousFundsToBeFrozen = fundsToBeFrozenForEpoch(addressInfo.lpFluidUntilEpoch)
+    previousFundsToBeFrozen.lpStagedUniV2FluidToFrozen -= addressInfo.lpStagedUniV2
+    previousFundsToBeFrozen.lpBondedUniV2FluidToFrozen -= addressInfo.lpBondedUniV2
+    previousFundsToBeFrozen.lpClaimableEsdFluidToFrozen -= addressInfo.lpClaimableEsd
+    previousFundsToBeFrozen.save()
+  } else if(previousAccountStatus == "frozen") {
+    // Account funds move from frozen to fluid
+    currentEpochSnapshot.lpStagedUniV2Frozen -= addressInfo.lpStagedUniV2
+    currentEpochSnapshot.lpBondedUniV2Frozen -= addressInfo.lpBondedUniV2
+    currentEpochSnapshot.lpClaimableEsdFrozen -= addressInfo.lpClaimableEsd
+    currentEpochSnapshot.lpStagedUniV2Fluid += (addressInfo.lpStagedUniV2 + deltaStagedUniV2)
+    currentEpochSnapshot.lpBondedUniV2Fluid += (addressInfo.lpBondedUniV2 - deltaStagedUniV2)
+    currentEpochSnapshot.lpClaimableEsdFluid += (addressInfo.lpClaimableEsd + newClaimableEsd)
+  } else {
+    log.error(
+      "[{}]: Got Withdraw/Deposit event on fluid status for address {} at epoch {}", 
+      [block.number.toString(), addressInfo.id, currentEpoch.toString()]
+    )
+  }
+
+  // Staged/Bonded status
+  currentEpochSnapshot.lpStagedUniV2Total += deltaStagedUniV2
+  currentEpochSnapshot.lpBondedUniV2Total -= deltaStagedUniV2
+  addressInfo.lpStagedUniV2 += deltaStagedUniV2
+  addressInfo.lpBondedUniV2 -= deltaStagedUniV2
+
+  // Claimable Status
+  addressInfo.lpClaimableEsd += newClaimableEsd
+  currentEpochSnapshot.lpClaimableEsdTotal += newClaimableEsd
+
+  // Funds are now fluid. Will become frozen after lockup period
+  addressInfo.lpFluidUntilEpoch = fluidUntilEpoch
+  let fundsToBeFrozen = fundsToBeFrozenForEpoch(fluidUntilEpoch)
+  fundsToBeFrozen.lpStagedUniV2FluidToFrozen += addressInfo.lpStagedUniV2
+  fundsToBeFrozen.lpBondedUniV2FluidToFrozen += addressInfo.lpBondedUniV2
+  fundsToBeFrozen.lpBondedUniV2FluidToFrozen += addressInfo.lpClaimableEsd
+  fundsToBeFrozen.save()
+
+  currentEpochSnapshot.save()
+  addressInfo.save()
+}
+
 /*
  *** HELPERS
  */
@@ -454,11 +593,11 @@ function epochSnapshotGetCurrent(): EpochSnapshot {
     epochSnapshot.lpStagedUniV2Frozen = BigInt.fromI32(0)
     epochSnapshot.lpStagedUniV2Fluid = BigInt.fromI32(0)
 
-    epochSnapshot.lpClaimableTotal = BigInt.fromI32(0)
-    epochSnapshot.lpClaimableFrozen = BigInt.fromI32(0)
-    epochSnapshot.lpClaimableFluid = BigInt.fromI32(0)
+    epochSnapshot.lpClaimableEsdTotal = BigInt.fromI32(0)
+    epochSnapshot.lpClaimableEsdFrozen = BigInt.fromI32(0)
+    epochSnapshot.lpClaimableEsdFluid = BigInt.fromI32(0)
 
-    epochSnapshot.lpRewardedTotal = BigInt.fromI32(0)
+    epochSnapshot.lpRewardedEsdTotal = BigInt.fromI32(0)
   }
 
   return <EpochSnapshot>epochSnapshot
@@ -495,11 +634,11 @@ function epochSnapshotCopyCurrent(currentEpochSnapshot: EpochSnapshot): void {
   epochSnapshot.lpStagedUniV2Frozen = currentEpochSnapshot.lpStagedUniV2Frozen
   epochSnapshot.lpStagedUniV2Fluid = currentEpochSnapshot.lpStagedUniV2Fluid
 
-  epochSnapshot.lpClaimableTotal = currentEpochSnapshot.lpClaimableTotal
-  epochSnapshot.lpClaimableFrozen = currentEpochSnapshot.lpClaimableFrozen
-  epochSnapshot.lpClaimableFluid = currentEpochSnapshot.lpClaimableFluid
+  epochSnapshot.lpClaimableEsdTotal = currentEpochSnapshot.lpClaimableEsdTotal
+  epochSnapshot.lpClaimableEsdFrozen = currentEpochSnapshot.lpClaimableEsdFrozen
+  epochSnapshot.lpClaimableEsdFluid = currentEpochSnapshot.lpClaimableEsdFluid
 
-  epochSnapshot.lpRewardedTotal = currentEpochSnapshot.lpRewardedTotal
+  epochSnapshot.lpRewardedEsdTotal = currentEpochSnapshot.lpRewardedEsdTotal
 
   epochSnapshot.save()
 }
@@ -516,6 +655,7 @@ function fundsToBeFrozenForEpoch(epoch: BigInt): FundsToBeFrozen {
     fundsToBeFrozen.daoBondedEsdsLockedToFrozen = BigInt.fromI32(0)
     fundsToBeFrozen.lpStagedUniV2FluidToFrozen = BigInt.fromI32(0)
     fundsToBeFrozen.lpBondedUniV2FluidToFrozen = BigInt.fromI32(0)
+    fundsToBeFrozen.lpClaimableEsdFluidToFrozen = BigInt.fromI32(0)
   }
 
   return <FundsToBeFrozen>fundsToBeFrozen
@@ -534,8 +674,7 @@ function addressInfoNew(id: string): AddressInfo {
 
   addressInfo.lpBondedUniV2 = BigInt.fromI32(0)
   addressInfo.lpStagedUniV2 = BigInt.fromI32(0)
-  addressInfo.lpClaimable = BigInt.fromI32(0)
-  addressInfo.lpRewarded = BigInt.fromI32(0)
+  addressInfo.lpClaimableEsd = BigInt.fromI32(0)
   addressInfo.lpFluidUntilEpoch = BigInt.fromI32(0)
 
   return addressInfo
@@ -545,6 +684,13 @@ function addressInfoDaoStatus(addressInfo: AddressInfo, epoch: BigInt): string {
   if(addressInfo.daoLockedUntilEpoch > epoch) {
     return 'locked'
   }
+  if(addressInfo.daoFluidUntilEpoch > epoch) {
+    return 'fluid'
+  }
+  return 'frozen'
+}
+
+function addressInfoLpStatus(addressInfo: AddressInfo, epoch: BigInt): string {
   if(addressInfo.daoFluidUntilEpoch > epoch) {
     return 'fluid'
   }
