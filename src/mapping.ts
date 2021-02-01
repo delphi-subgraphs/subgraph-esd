@@ -55,8 +55,10 @@ import {
 import { 
   Deposit as LpDeposit,
   Withdraw as LpWithdraw,
+  Provide as LpProvide,
   Bond as LpBond,  
   Unbond as LpUnbond,
+  Claim as LpClaim,
 } from '../generated/templates/LpContract/LpContract'
 
 import {
@@ -542,6 +544,8 @@ function applyLpBondingDeltas(addressInfo: AddressInfo, deltaStagedUniV2: BigInt
   // Claimable Status
   addressInfo.lpClaimableEsd += newClaimableEsd
   currentEpochSnapshot.lpClaimableEsdTotal += newClaimableEsd
+  // Rewarded = pool balance - total claimable
+  currentEpochSnapshot.lpRewardedEsdTotal -= newClaimableEsd
 
   // Funds are now fluid. Will become frozen after lockup period
   addressInfo.lpFluidUntilEpoch = fluidUntilEpoch
@@ -551,6 +555,36 @@ function applyLpBondingDeltas(addressInfo: AddressInfo, deltaStagedUniV2: BigInt
   fundsToBeFrozen.lpBondedUniV2FluidToFrozen += addressInfo.lpClaimableEsd
   fundsToBeFrozen.save()
 
+  currentEpochSnapshot.save()
+  addressInfo.save()
+}
+
+function handleLpClaim(event: LpClaim): void {
+  let account = event.params.account
+  let value = event.params.value
+  let currentEpochSnapshot = epochSnapshotGetCurrent()
+  let addressInfo = mustLoadAddressInfo(account, event.block, 'Claim')
+
+  addressInfo.lpClaimableEsd -= value
+  currentEpochSnapshot.lpClaimableEsdTotal -= value
+  // Only frozen
+  currentEpochSnapshot.lpClaimableEsdFrozen -= value
+
+  currentEpochSnapshot.save()
+  addressInfo.save()
+}
+
+function handleLpProvide(event: LpProvide): void {
+  let account = event.params.account
+  let newUniV2 = event.params.newUniV2
+  let currentEpochSnapshot = epochSnapshotGetCurrent()
+  let addressInfo = mustLoadAddressInfo(account, event.block, 'Provide')
+
+  addressInfo.lpBondedUniV2 += 
+  currentEpochSnapshot.lpBondedUniV2Total += value
+  // Only frozen
+  currentEpochSnapshot.lpBondedUniV2Frozen += value
+  
   currentEpochSnapshot.save()
   addressInfo.save()
 }
