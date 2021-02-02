@@ -47,9 +47,6 @@ export function impApplyBondedSupply(epochSnapshot: EpochSnapshot, newRedeemable
     // Pool and Bond rewards taken at the end (can apply bondReward directly)
     let poolReward = getOraclePoolShare(newBonded, block)
     bondReward = newBonded - poolReward
-    if(bondReward > BigInt.fromI32(0)) {
-      epochSnapshot.daoBondedEsdTotal += bondReward
-    }
   } else if(block.number < PROPOSAL12_BLOCK) {
     // Pool rewards share taken from an adjusted redeemable amount
     let redeemableBeforePool = newRedeemable / (BigInt.fromI32(1) - (getOraclePoolRatio(block) / BigInt.fromI32(100)))
