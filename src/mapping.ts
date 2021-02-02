@@ -580,7 +580,7 @@ export function handleLpProvide(event: LpProvide): void {
   let currentEpochSnapshot = epochSnapshotGetCurrent()
   let addressInfo = mustLoadAddressInfo(account, event.block, 'Provide')
 
-  addressInfo.lpBondedUniV2 += 
+  addressInfo.lpBondedUniV2 += value
   currentEpochSnapshot.lpBondedUniV2Total += value
   // Only frozen
   currentEpochSnapshot.lpBondedUniV2Frozen += value
