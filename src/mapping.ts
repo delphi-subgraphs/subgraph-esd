@@ -356,7 +356,7 @@ function applyDaoBondingDeltas(addressInfo: AddressInfo, deltaStagedEsd: BigInt,
 
 export function handleDaoVote(event: DaoVote): void {
   let voteAddress = event.params.account
-  let voteCandidate = event.params.account
+  let voteCandidate = event.params.candidate
   let addressInfo = mustLoadAddressInfo(voteAddress, event.block, 'Vote')
   let currentEpochSnapshot = epochSnapshotGetCurrent()
 
@@ -559,7 +559,7 @@ function applyLpBondingDeltas(addressInfo: AddressInfo, deltaStagedUniV2: BigInt
   addressInfo.save()
 }
 
-function handleLpClaim(event: LpClaim): void {
+export function handleLpClaim(event: LpClaim): void {
   let account = event.params.account
   let value = event.params.value
   let currentEpochSnapshot = epochSnapshotGetCurrent()
@@ -574,9 +574,9 @@ function handleLpClaim(event: LpClaim): void {
   addressInfo.save()
 }
 
-function handleLpProvide(event: LpProvide): void {
+export function handleLpProvide(event: LpProvide): void {
   let account = event.params.account
-  let newUniV2 = event.params.newUniV2
+  let value = event.params.newUniv2
   let currentEpochSnapshot = epochSnapshotGetCurrent()
   let addressInfo = mustLoadAddressInfo(account, event.block, 'Provide')
 
