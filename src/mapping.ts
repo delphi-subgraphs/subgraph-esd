@@ -246,9 +246,6 @@ export function handleDaoAdvance(event: DaoAdvance): void {
   currentEpochSnapshot.lpClaimableEsdFluid -= fundsToBeFrozen.lpClaimableEsdFluidToFrozen
   currentEpochSnapshot.lpClaimableEsdFrozen += fundsToBeFrozen.lpClaimableEsdFluidToFrozen
 
-  // TODO(Fede): Compute LP amounts
-  currentEpochSnapshot.save()
-
   // Fill in balances for history entities
   // Values at the end of the epoch (begining of the next one) are taken
   // TODO(Fede): maybe we can have "current" entities here too
@@ -272,11 +269,13 @@ export function handleDaoAdvance(event: DaoAdvance): void {
 
     // lpTokenHistory
     let daoContract = DaoContract.bind(ADDRESS_ESD_DAO)
-    let uniswapContract = UniswapV2PairContract.bind(ADDRESS_UNISWAP_PAIR)
+    let uniswapContract = DaoCallUniswapV2PairContract.bind(ADDRESS_UNISWAP_PAIR)
     let totalLpUniV2 = uniswapContract.totalSupply()
     let totalLpBonded = BigInt.fromI32(0)
     let totalLpStaged = BigInt.fromI32(0)
     let lpContractAddress = daoContract.pool()
+    let totalDaoBondedEsd = daoContract.totalBonded()
+    currentEpochSnapshot.DEBUGDaoBondedEsdTotal = totalDaoBondedEsd
     if(lpContractAddress) {
       let lpContract = DaoCallLpContract.bind(lpContractAddress)
       totalLpBonded = lpContract.totalBonded()
@@ -290,6 +289,8 @@ export function handleDaoAdvance(event: DaoAdvance): void {
     lpTokenHistory.totalStaged = totalLpStaged
     lpTokenHistory.save()
   }
+
+  currentEpochSnapshot.save()
 }
 
 export function handleDaoDeposit(event: DaoDeposit): void {
@@ -667,6 +668,7 @@ function epochSnapshotGetCurrent(): EpochSnapshot {
     epochSnapshot.oraclePrice = BigInt.fromI32(0)
     epochSnapshot.bootstrappingAt = false
 
+    epochSnapshot.DEBUGDaoBondedEsdTotal = BigInt.fromI32(0)
     epochSnapshot.daoBondedEsdTotal = BigInt.fromI32(0)
     epochSnapshot.daoBondedEsdsTotal = BigInt.fromI32(0)
     epochSnapshot.daoBondedEsdsFrozen = BigInt.fromI32(0)
@@ -708,6 +710,7 @@ function epochSnapshotCopyCurrent(currentEpochSnapshot: EpochSnapshot): void {
   epochSnapshot.oraclePrice = currentEpochSnapshot.oraclePrice
   epochSnapshot.bootstrappingAt = currentEpochSnapshot.bootstrappingAt
 
+  epochSnapshot.DEBUGDaoBondedEsdTotal = currentEpochSnapshot.DEBUGDaoBondedEsdTotal
   epochSnapshot.daoBondedEsdTotal = currentEpochSnapshot.daoBondedEsdTotal
   epochSnapshot.daoBondedEsdsTotal = currentEpochSnapshot.daoBondedEsdsTotal
   epochSnapshot.daoBondedEsdsFrozen = currentEpochSnapshot.daoBondedEsdsFrozen

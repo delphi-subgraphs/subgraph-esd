@@ -154,6 +154,15 @@ export class EpochSnapshot extends Entity {
     this.set("bootstrappingAt", Value.fromBoolean(value));
   }
 
+  get DEBUGDaoBondedEsdTotal(): BigInt {
+    let value = this.get("DEBUGDaoBondedEsdTotal");
+    return value.toBigInt();
+  }
+
+  set DEBUGDaoBondedEsdTotal(value: BigInt) {
+    this.set("DEBUGDaoBondedEsdTotal", Value.fromBigInt(value));
+  }
+
   get daoBondedEsdTotal(): BigInt {
     let value = this.get("daoBondedEsdTotal");
     return value.toBigInt();

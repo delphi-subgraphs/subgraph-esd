@@ -15,6 +15,7 @@ type EpochSnapshot @entity {
   oraclePrice: BigInt!
   bootstrappingAt: Boolean!
 
+  DEBUGDaoBondedEsdTotal: BigInt!
   daoBondedEsdTotal: BigInt!
   daoBondedEsdsTotal: BigInt!
   daoBondedEsdsFrozen: BigInt!
