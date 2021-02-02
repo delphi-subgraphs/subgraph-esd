@@ -197,6 +197,15 @@ export function handleDollarTransfer(event: DollarTransfer): void {
     toAddressInfo.esdBalance += transferAmount
     toAddressInfo.save()
   }
+
+  if(transferTo == ADDRESS_ESD_LP1 ||
+    transferTo == ADDRESS_ESD_LP2 ||
+    transferTo == ADDRESS_ESD_LP3 ||
+    transferTo == ADDRESS_ESD_LP4) {
+    let currentEpoch = epochSnapshotGetCurrent()
+    currentEpoch.lpRewardedEsdTotal += transferAmount
+    currentEpoch.save()
+  }
 }
 
 
@@ -517,10 +526,10 @@ function applyLpDepositDelta(addressInfo: AddressInfo, deltaStagedUniV2: BigInt,
   addressInfo.lpStagedUniV2 += deltaStagedUniV2
   let accountStatus = addressInfoLpStatus(addressInfo, currentEpochSnapshot.epoch)
   if (accountStatus == "fluid") {
-    meta = Meta.load("current")
+    let meta = Meta.load("current")
     log.error(
-      "[{}]: Got Withdraw/Deposit event on fluid status for address {} at epoch {}, targetPool {}, currentPool {}",
-      [block.number.toString(), addressInfo.id, currentEpochSnapshot.epoch.toString(), event.address.toString(), meta.lpAddress]
+      "[{}]: Got Withdraw/Deposit event on fluid status for address {} at epoch {}, currentPool {}",
+      [block.number.toString(), addressInfo.id, currentEpochSnapshot.epoch.toString(), meta.lpAddress]
     )
   } else {
     currentEpochSnapshot.lpStagedUniV2Frozen += deltaStagedUniV2
