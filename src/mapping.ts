@@ -10,13 +10,19 @@ import {
 } from '../generated/schema'
 
 import { 
+  Upgraded as UpgradeableUpgraded
+} from '../generated/UpgradeableContract/UpgradeableContract'
+
+import {
+	UniswapV2PairContract,
+	Transfer as UniswapV2PairTransfer,
+} from '../generated/UniswapV2PairContract/UniswapV2PairContract'
+
+import { 
   DollarContract,
   Transfer as DollarTransfer
 } from '../generated/DaoContract/DollarContract'
 
-import { 
-  Upgraded as UpgradeableUpgraded
-} from '../generated/UpgradeableContract/UpgradeableContract'
 
 // Dao Contract
 import {
@@ -41,7 +47,9 @@ import { LpContract as DaoCallLpContract } from '../generated/DaoContract/LpCont
 
 import { DollarContract as DaoCallDollarContract } from '../generated/DaoContract/DollarContract'
 
-import { UniswapV2PairContract } from '../generated/DaoContract/UniswapV2PairContract'
+import { 
+  UniswapV2PairContract as DaoCallUniswapV2PairContract
+} from '../generated/DaoContract/UniswapV2PairContract'
 
 import {
   DaoContract as UpgradeableCallDaoContract,
@@ -86,6 +94,72 @@ let ADDRESS_ESD_LP4 = Address.fromString('0x4082D11E506e3250009A991061ACd2176077
 let DAO_COUPON_EXPIRATION = BigInt.fromI32(90)
 
 /*
+ *** UPGRADEABLE
+ */
+
+export function handleUpgradeableUpgraded(event: UpgradeableUpgraded): void {
+  let meta = Meta.load("current")
+  if (meta == null) {
+    meta = new Meta("current")
+    meta.lpAddress = ADDRESS_ZERO_HEX 
+  }
+
+  // Check if there's a new pool for contract. If there is, add
+  // to meta and start listening to its events
+  let daoContract = UpgradeableCallDaoContract.bind(ADDRESS_ESD_DAO)
+  let currentPool = daoContract.pool()
+
+  if(currentPool.toHexString() != meta.lpAddress) {
+    log.info(
+      "[{}]: Creating new pool contract for address [{}]",
+      [event.block.number.toString(), currentPool.toHexString()]
+    )
+    meta.lpAddress = currentPool.toHexString()
+    meta.save()
+    TemplateLpContract.create(currentPool)
+  }
+}
+
+/*
+ *** UNISWAPV2 PAIR
+ */
+export function handleUniswapV2PairTransfer(event: UniswapV2PairTransfer): void {
+  let transferFrom = event.params.from
+  let transferTo = event.params.to
+  let transferAmount = event.params.value
+
+  // Deduct amount from sender
+  if(transferFrom.toHexString() != ADDRESS_ZERO_HEX && transferAmount > BI_ZERO) {
+    let fromAddressInfo = mustLoadAddressInfo(transferFrom, event.block, 'Transfer')
+    if (fromAddressInfo.uniV2Balance < transferAmount) {
+      log.error(
+        '[{}]: Got transfer from address {} with insuficient funds value is {} balance is {}',
+        [
+          event.block.number.toString(),
+          transferFrom.toHexString(),
+          transferAmount.toString(),
+          fromAddressInfo.uniV2Balance.toString()
+        ]
+      )
+    }
+
+    fromAddressInfo.uniV2Balance -= transferAmount
+    fromAddressInfo.save()
+  }
+
+  // Add amount to receiver
+  if(transferTo.toHexString() != ADDRESS_ZERO_HEX && transferAmount > BI_ZERO) {
+    let toAddressInfo = AddressInfo.load(transferTo.toHexString())
+    if (toAddressInfo == null) {
+      toAddressInfo = addressInfoNew(transferTo.toHexString())
+    }
+
+    toAddressInfo.uniV2Balance += transferAmount
+    toAddressInfo.save()
+  }
+}
+
+/*
  *** DOLLAR
  */
 
@@ -94,9 +168,6 @@ export function handleDollarTransfer(event: DollarTransfer): void {
   let transferTo = event.params.to
   let transferAmount = event.params.value
 
-  log.debug(
-    '[{}]: Transfer {} from address {} to {}',
-    [event.block.number.toString(), transferAmount.toString(), transferFrom.toHexString(), transferTo.toHexString()])
   // Deduct amount from sender
   if(transferFrom.toHexString() != ADDRESS_ZERO_HEX && transferAmount > BI_ZERO) {
     let fromAddressInfo = mustLoadAddressInfo(transferFrom, event.block, 'Transfer')
@@ -128,32 +199,6 @@ export function handleDollarTransfer(event: DollarTransfer): void {
   }
 }
 
-/*
- *** UPGRADEABLE
- */
-
-export function handleUpgradeableUpgraded(event: UpgradeableUpgraded): void {
-  let meta = Meta.load("current")
-  if (meta == null) {
-    meta = new Meta("current")
-    meta.lpAddress = ADDRESS_ZERO_HEX 
-  }
-
-  // Check if there's a new pool for contract. If there is, add
-  // to meta and start listening to its events
-  let daoContract = UpgradeableCallDaoContract.bind(ADDRESS_ESD_DAO)
-  let currentPool = daoContract.pool()
-
-  if(currentPool.toHexString() != meta.lpAddress) {
-    log.info(
-      "[{}]: Creating new pool contract for address [{}]",
-      [event.block.number.toString(), currentPool.toHexString()]
-    )
-    meta.lpAddress = currentPool.toHexString()
-    meta.save()
-    TemplateLpContract.create(currentPool)
-  }
-}
 
 
 /*
@@ -725,7 +770,7 @@ function addressInfoDaoStatus(addressInfo: AddressInfo, epoch: BigInt): string {
 }
 
 function addressInfoLpStatus(addressInfo: AddressInfo, epoch: BigInt): string {
-  if(addressInfo.daoFluidUntilEpoch > epoch) {
+  if(addressInfo.lpFluidUntilEpoch > epoch) {
     return 'fluid'
   }
   return 'frozen'

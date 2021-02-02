@@ -16,7 +16,7 @@ dataSources:
       apiVersion: 0.0.4
       language: wasm/assemblyscript
       entities:
-        - Upgraded
+        - Meta
       abis:
         - name: UpgradeableContract
           file: ./abis/UpgradeableContract.json
@@ -26,6 +26,27 @@ dataSources:
         - event: Upgraded(indexed address)
           handler: handleUpgradeableUpgraded
       file: ./src/mapping.ts
+  - kind: ethereum/contract
+    name: UniswapV2PairContract
+    network: mainnet
+    source:
+      address: "0x88ff79eb2bc5850f27315415da8685282c7610f9"
+      abi: UniswapV2PairContract
+      startBlock: 10722554
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.4
+      language: wasm/assemblyscript
+      file: ./src/mapping.ts
+      entities:
+        - EpochSnapshot
+        - AddressInfo
+      abis:
+        - name: UniswapV2PairContract
+          file: ./abis/UniswapV2PairContract.json
+      eventHandlers:
+        - event: Transfer(indexed address,indexed address,uint256)
+          handler: handleUniswapV2PairTransfer
   - kind: ethereum/contract
     name: DollarContract
     network: mainnet
@@ -38,7 +59,8 @@ dataSources:
       apiVersion: 0.0.4
       language: wasm/assemblyscript
       entities:
-        - Transfer
+        - AddressInfo
+        - EpochSnapshot
       abis:
         - name: DollarContract
           file: ./abis/DollarContract.json
@@ -58,16 +80,11 @@ dataSources:
       apiVersion: 0.0.4
       language: wasm/assemblyscript
       entities:
-        - Advance
-        - Deposit
-        - Withdraw
-        - Bond
-        - Unbond
-        - Vote
-        - SupplyDecrease
-        - SupplyIncrease
-        - SupplyNeutral
-        - CouponExpiration
+        - AddressInfo
+        - EpochSnapshot
+        - FundsToBeFrozen
+        - EsdSupplyHistory
+        - LpV2TokenHistory
       abis:
         - name: DaoContract
           file: ./abis/DaoContract.json
@@ -110,12 +127,9 @@ templates:
       apiVersion: 0.0.4
       language: wasm/assemblyscript
       entities:
-        - Deposit
-        - Withdraw
-        - Provide
-        - Bond
-        - Unbond
-        - Claim
+        - AddressInfo
+        - EpochSnapshot
+        - FundsToBeFrozen
       abis:
         - name: LpContract
           file: ./abis/LpContract.json
