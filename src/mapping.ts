@@ -414,11 +414,6 @@ export function handleDaoVote(event: DaoVote): void {
   let candidatePeriod = daoContract.periodFor(voteCandidate)
   let newDaoLockedUntilEpoch = candidateStart + candidatePeriod
 
-  log.warning(
-    "[{}]: handling vote for candidate {} start {} period {} new locked {}",
-    [event.block.number.toString(), voteCandidate.toHexString(), candidateStart.toString(), candidatePeriod.toString(), newDaoLockedUntilEpoch.toString()]
-  )
-
   if(newDaoLockedUntilEpoch > addressInfo.daoLockedUntilEpoch) {
     let daoStatus = addressInfoDaoStatus(addressInfo, currentEpochSnapshot.epoch)
     if(daoStatus == 'locked') {
