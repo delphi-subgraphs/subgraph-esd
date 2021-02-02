@@ -220,13 +220,22 @@ export function handleDaoAdvance(event: DaoAdvance): void {
   // Compute amounts that go back to frozen state on the epoch
   let fundsToBeFrozen = fundsToBeFrozenForEpoch(epoch)
 
+  currentEpochSnapshot.daoStagedEsdFluid -= fundsToBeFrozen.daoStagedEsdFluidToFrozen
+  currentEpochSnapshot.daoStagedEsdLocked -= fundsToBeFrozen.daoStagedEsdLockedToFrozen
+  currentEpochSnapshot.daoStagedEsdFrozen += (fundsToBeFrozen.daoStagedEsdFluidToFrozen + fundsToBeFrozen.daoStagedEsdLockedToFrozen)
+
   currentEpochSnapshot.daoBondedEsdsFluid -= fundsToBeFrozen.daoBondedEsdsFluidToFrozen
   currentEpochSnapshot.daoBondedEsdsLocked -= fundsToBeFrozen.daoBondedEsdsLockedToFrozen
   currentEpochSnapshot.daoBondedEsdsFrozen += (fundsToBeFrozen.daoBondedEsdsFluidToFrozen + fundsToBeFrozen.daoBondedEsdsLockedToFrozen)
 
-  currentEpochSnapshot.daoStagedEsdFluid -= fundsToBeFrozen.daoStagedEsdFluidToFrozen
-  currentEpochSnapshot.daoStagedEsdLocked -= fundsToBeFrozen.daoStagedEsdLockedToFrozen
-  currentEpochSnapshot.daoStagedEsdFrozen += (fundsToBeFrozen.daoStagedEsdFluidToFrozen + fundsToBeFrozen.daoStagedEsdLockedToFrozen)
+  currentEpochSnapshot.lpStagedUniV2Fluid -= fundsToBeFrozen.lpStagedUniV2FluidToFrozen
+  currentEpochSnapshot.lpStagedUniV2Frozen += fundsToBeFrozen.lpStagedUniV2FluidToFrozen
+
+  currentEpochSnapshot.lpBondedUniV2Fluid -= fundsToBeFrozen.lpBondedUniV2FluidToFrozen
+  currentEpochSnapshot.lpBondedUniV2Frozen += fundsToBeFrozen.lpBondedUniV2FluidToFrozen
+
+  currentEpochSnapshot.lpClaimableEsdFluid -= fundsToBeFrozen.lpClaimableEsdFluidToFrozen
+  currentEpochSnapshot.lpClaimableEsdFrozen += fundsToBeFrozen.lpClaimableEsdFluidToFrozen
 
   // TODO(Fede): Compute LP amounts
   currentEpochSnapshot.save()
@@ -508,9 +517,10 @@ function applyLpDepositDelta(addressInfo: AddressInfo, deltaStagedUniV2: BigInt,
   addressInfo.lpStagedUniV2 += deltaStagedUniV2
   let accountStatus = addressInfoLpStatus(addressInfo, currentEpochSnapshot.epoch)
   if (accountStatus == "fluid") {
+    meta = Meta.load("current")
     log.error(
-      "[{}]: Got Withdraw/Deposit event on fluid status for address {} at epoch {}",
-      [block.number.toString(), addressInfo.id, currentEpochSnapshot.epoch.toString()]
+      "[{}]: Got Withdraw/Deposit event on fluid status for address {} at epoch {}, targetPool {}, currentPool {}",
+      [block.number.toString(), addressInfo.id, currentEpochSnapshot.epoch.toString(), event.address.toString(), meta.lpAddress]
     )
   } else {
     currentEpochSnapshot.lpStagedUniV2Frozen += deltaStagedUniV2
@@ -531,7 +541,7 @@ export function handleLpBond(event: LpBond): void {
 
 export function handleLpUnbond(event: LpUnbond): void {
   let account = event.params.account
-  let deltaStagedUniV2 = event.params.value.neg()
+  let deltaStagedUniV2 = event.params.value
   let newClaimableEsd = event.params.newClaimable
   if(deltaStagedUniV2 > BI_ZERO) {
     let addressInfo = mustLoadAddressInfo(account, event.block, 'Unbond')
