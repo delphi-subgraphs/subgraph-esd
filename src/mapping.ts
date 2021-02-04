@@ -393,7 +393,7 @@ function applyDaoBondingDeltas(addressInfo: AddressInfo, deltaStagedEsd: BigInt,
     currentEpochSnapshot.daoBondedEsdsFluid += (addressInfo.daoBondedEsds + deltaBondedEsds)
   } else {
     log.error(
-      "[{}]: Got Withdraw/Deposit event on fluid status for address {} at epoch {}", 
+      "[{}]: Got Bond/Unbond event on fluid status for address {} at epoch {}", 
       [block.number.toString(), addressInfo.id, currentEpoch.toString()]
     )
   }
@@ -526,11 +526,11 @@ function applyLpDepositDelta(addressInfo: AddressInfo, deltaStagedUniV2: BigInt,
   currentEpochSnapshot.lpStagedUniV2Total += deltaStagedUniV2
   addressInfo.lpStagedUniV2 += deltaStagedUniV2
   let accountStatus = addressInfoLpStatus(addressInfo, currentEpochSnapshot.epoch)
-  if (accountStatus == "fluid") {
-    let meta = Meta.load("current")
+  if (accountStatus == 'fluid') {
+    let meta = Meta.load('current')
     log.error(
-      "[{}]: Got Withdraw/Deposit event on fluid status for address {} at epoch {}, currentPool {}",
-      [block.number.toString(), addressInfo.id, currentEpochSnapshot.epoch.toString(), meta.lpAddress]
+      "[{}]: Got Withdraw/Deposit event on fluid status for address {} at epoch {}, lpFluidUnitlEpoch {}, currentPool {}",
+      [block.number.toString(), addressInfo.id, currentEpochSnapshot.epoch.toString(), addressInfo.lpFluidUntilEpoch.toString(), meta.lpAddress]
     )
   } else {
     currentEpochSnapshot.lpStagedUniV2Frozen += deltaStagedUniV2
@@ -580,7 +580,7 @@ function applyLpBondingDeltas(addressInfo: AddressInfo, deltaStagedUniV2: BigInt
     previousFundsToBeFrozen.lpBondedUniV2FluidToFrozen -= addressInfo.lpBondedUniV2
     previousFundsToBeFrozen.lpClaimableEsdFluidToFrozen -= addressInfo.lpClaimableEsd
     previousFundsToBeFrozen.save()
-  } else if(previousAccountStatus == "frozen") {
+  } else {
     // Account funds move from frozen to fluid
     currentEpochSnapshot.lpStagedUniV2Frozen -= addressInfo.lpStagedUniV2
     currentEpochSnapshot.lpBondedUniV2Frozen -= addressInfo.lpBondedUniV2
@@ -588,11 +588,6 @@ function applyLpBondingDeltas(addressInfo: AddressInfo, deltaStagedUniV2: BigInt
     currentEpochSnapshot.lpStagedUniV2Fluid += (addressInfo.lpStagedUniV2 + deltaStagedUniV2)
     currentEpochSnapshot.lpBondedUniV2Fluid += (addressInfo.lpBondedUniV2 - deltaStagedUniV2)
     currentEpochSnapshot.lpClaimableEsdFluid += (addressInfo.lpClaimableEsd + newClaimableEsd)
-  } else {
-    log.error(
-      "[{}]: Got Withdraw/Deposit event on fluid status for address {} at epoch {}", 
-      [block.number.toString(), addressInfo.id, currentEpoch.toString()]
-    )
   }
 
   // Staged/Bonded status

@@ -49,8 +49,8 @@ export function impApplyBondedSupply(epochSnapshot: EpochSnapshot, newRedeemable
     bondReward = newBonded - poolReward
   } else if(block.number < PROPOSAL12_BLOCK) {
     // Pool rewards share taken from an adjusted redeemable amount
-    let redeemableBeforePool = newRedeemable / (BigInt.fromI32(1) - (getOraclePoolRatio(block) / BigInt.fromI32(100)))
-    let poolRedeemableReward = getOraclePoolShare(redeemableBeforePool, block)
+    let poolRatio = getOraclePoolRatio(block)
+    let poolRedeemableReward = newRedeemable * poolRatio / (BigInt.fromI32(100) - poolRatio)
     let bondedAfterRedeemable = newBonded - poolRedeemableReward
     let poolSupplyShare = getOraclePoolShare(bondedAfterRedeemable, block)
     bondReward = bondedAfterRedeemable - poolSupplyShare
@@ -75,6 +75,10 @@ export function impApplyBondedSupply(epochSnapshot: EpochSnapshot, newRedeemable
     )
   }
 
+  log.error(
+    "[{}]: SupplyIncrease, applied bond reward {} for epoch {}, newRedeemable {}, newBonded {}",
+    [block.number.toString(), bondReward.toString(),  epochSnapshot.epoch.toString(), newRedeemable.toString(), newBonded.toString()]
+  )
   return epochSnapshot
 }
 
@@ -92,6 +96,10 @@ export function impApplyCouponExpirationSupply(epochSnapshot: EpochSnapshot, new
       [block.number.toString(), bondReward.toString(), epochSnapshot.epoch.toString()]
     )
   }
+  log.error(
+    "[{}]: CouponExpiration, applied bond reward {} for epoch {}, newBonded {}",
+    [block.number.toString(), bondReward.toString(), epochSnapshot.epoch.toString(), newBonded.toString()]
+  )
 
   return epochSnapshot
 
