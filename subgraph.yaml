@@ -107,6 +107,8 @@ dataSources:
           handler: handleDaoUnbond
         - event: Vote(indexed address,indexed address,uint8,uint256)
           handler: handleDaoVote
+        - event: StabilityReward(indexed uint256,uint256,uint256)
+          handler: handleDaoStabilityReward
         - event: SupplyDecrease(indexed uint256,uint256,uint256)
           handler: handleDaoSupplyDecrease
         - event: SupplyIncrease(indexed uint256,uint256,uint256,uint256,uint256)

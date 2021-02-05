@@ -75,10 +75,6 @@ export function impApplyBondedSupply(epochSnapshot: EpochSnapshot, newRedeemable
     )
   }
 
-  log.error(
-    "[{}]: SupplyIncrease, applied bond reward {} for epoch {}, newRedeemable {}, newBonded {}",
-    [block.number.toString(), bondReward.toString(),  epochSnapshot.epoch.toString(), newRedeemable.toString(), newBonded.toString()]
-  )
   return epochSnapshot
 }
 
@@ -96,13 +92,8 @@ export function impApplyCouponExpirationSupply(epochSnapshot: EpochSnapshot, new
       [block.number.toString(), bondReward.toString(), epochSnapshot.epoch.toString()]
     )
   }
-  log.error(
-    "[{}]: CouponExpiration, applied bond reward {} for epoch {}, newBonded {}",
-    [block.number.toString(), bondReward.toString(), epochSnapshot.epoch.toString(), newBonded.toString()]
-  )
 
   return epochSnapshot
-
 }
 
 function getOraclePoolShare(targetAmount: BigInt, block: ethereum.Block): BigInt {

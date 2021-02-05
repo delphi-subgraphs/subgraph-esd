@@ -308,6 +308,32 @@ export class Proposal__Params {
   }
 }
 
+export class StabilityReward extends ethereum.Event {
+  get params(): StabilityReward__Params {
+    return new StabilityReward__Params(this);
+  }
+}
+
+export class StabilityReward__Params {
+  _event: StabilityReward;
+
+  constructor(event: StabilityReward) {
+    this._event = event;
+  }
+
+  get epoch(): BigInt {
+    return this._event.parameters[0].value.toBigInt();
+  }
+
+  get rate(): BigInt {
+    return this._event.parameters[1].value.toBigInt();
+  }
+
+  get amount(): BigInt {
+    return this._event.parameters[2].value.toBigInt();
+  }
+}
+
 export class SupplyDecrease extends ethereum.Event {
   get params(): SupplyDecrease__Params {
     return new SupplyDecrease__Params(this);

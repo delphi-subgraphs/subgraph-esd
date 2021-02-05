@@ -33,6 +33,7 @@ import {
   Bond as DaoBond,  
   Unbond as DaoUnbond,
   Vote as DaoVote,
+  StabilityReward as DaoStabilityReward,
   SupplyDecrease as DaoSupplyDecrease,
   SupplyIncrease as DaoSupplyIncrease,
   SupplyNeutral as DaoSupplyNeutral,
@@ -457,6 +458,12 @@ export function handleDaoVote(event: DaoVote): void {
     addressInfo.save()
     newFundsToBeFrozen.save()
   }
+}
+
+export function handleDaoStabilityReward(event: DaoStabilityReward): void {
+  let currentEpochSnapshot = epochSnapshotGetCurrent()
+  currentEpochSnapshot.daoBondedEsdTotal += event.params.amount
+  currentEpochSnapshot.save()
 }
 
 export function handleDaoSupplyDecrease(event: DaoSupplyDecrease): void {
