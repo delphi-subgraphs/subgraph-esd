@@ -460,6 +460,9 @@ export function handleDaoVote(event: DaoVote): void {
   }
 }
 
+// Since proposal 17: 0xda7780d1bcccf32ac50da8956f9acead5a507576
+// Block: 11725853
+// https://github.com/emptysetsquad/dollar/pull/19
 export function handleDaoStabilityReward(event: DaoStabilityReward): void {
   let currentEpochSnapshot = epochSnapshotGetCurrent()
   currentEpochSnapshot.daoBondedEsdTotal += event.params.amount
