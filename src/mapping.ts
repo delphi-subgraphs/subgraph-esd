@@ -199,6 +199,15 @@ export function handleDollarTransfer(event: DollarTransfer): void {
     toAddressInfo.save()
   }
 
+  if(transferFrom == ADDRESS_ESD_LP1 ||
+    transferFrom == ADDRESS_ESD_LP2 ||
+    transferFrom == ADDRESS_ESD_LP3 ||
+    transferFrom == ADDRESS_ESD_LP4) {
+    let currentEpoch = epochSnapshotGetCurrent()
+    currentEpoch.lpRewardedEsdTotal -= transferAmount
+    currentEpoch.save()
+  }
+
   if(transferTo == ADDRESS_ESD_LP1 ||
     transferTo == ADDRESS_ESD_LP2 ||
     transferTo == ADDRESS_ESD_LP3 ||
@@ -524,7 +533,7 @@ export function handleLpWithdraw(event: LpWithdraw): void {
   if(withdrawAmount > BI_ZERO) {
     let addressInfo = mustLoadAddressInfo(withdrawAddress, event.block, 'Withdraw')
     let deltaStagedUniV2 = withdrawAmount.neg()
-    applyDaoDepositDelta(addressInfo, deltaStagedUniV2, event.block)
+    applyLpDepositDelta(addressInfo, deltaStagedUniV2, event.block)
   }
 }
 
@@ -632,6 +641,10 @@ export function handleLpClaim(event: LpClaim): void {
 
   addressInfo.lpClaimableEsd -= value
   currentEpochSnapshot.lpClaimableEsdTotal -= value
+  // Rewarded = pool balance - total claimable. This should compensate when
+  // The erc20 transfer event is processed
+  currentEpochSnapshot.lpRewardedEsdTotal += value
+
   // Only frozen
   currentEpochSnapshot.lpClaimableEsdFrozen -= value
 
