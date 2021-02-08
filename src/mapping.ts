@@ -339,16 +339,19 @@ function applyDaoDepositDelta(addressInfo: AddressInfo, deltaStagedEsd: BigInt, 
   if (accountStatus == "locked") {
     currentEpochSnapshot.daoStagedEsdLocked += deltaStagedEsd
 
-    // Add amount to funds unlocked 
     let fundsToBeFrozen = fundsToBeFrozenForEpoch(addressInfo.daoLockedUntilEpoch)
-  } if (accountStatus == "fluid") {
+    fundsToBeFrozen.daoStagedEsdLockedToFrozen += deltaStagedEsd
+  } else {
+    currentEpochSnapshot.daoStagedEsdFrozen += deltaStagedEsd
+  }
+
+  if (accountStatus == "fluid") {
     log.error(
       "[{}]: Got Withdraw/Deposit event on fluid status for address {} at epoch {}",
       [block.number.toString(), addressInfo.id, currentEpochSnapshot.epoch.toString()]
     )
-  } else {
-    currentEpochSnapshot.daoStagedEsdFrozen += deltaStagedEsd
   }
+
   currentEpochSnapshot.save()
   addressInfo.save()
 }
@@ -402,7 +405,7 @@ function applyDaoBondingDeltas(addressInfo: AddressInfo, deltaStagedEsd: BigInt,
     currentEpochSnapshot.daoBondedEsdsFluid += (addressInfo.daoBondedEsds + deltaBondedEsds)
   } else {
     log.error(
-      "[{}]: Got Bond/Unbond event on fluid status for address {} at epoch {}", 
+      "[{}]: Got Bond/Unbond event on locked status for address {} at epoch {}", 
       [block.number.toString(), addressInfo.id, currentEpoch.toString()]
     )
   }
@@ -461,10 +464,10 @@ export function handleDaoVote(event: DaoVote): void {
     let newFundsToBeFrozen = fundsToBeFrozenForEpoch(newDaoLockedUntilEpoch)
     newFundsToBeFrozen.daoStagedEsdLockedToFrozen += addressInfo.daoStagedEsd
     newFundsToBeFrozen.daoBondedEsdsLockedToFrozen += addressInfo.daoBondedEsds
-    addressInfo.daoLockedUntilEpoch = newDaoLockedUntilEpoch
-
-    addressInfo.save()
     newFundsToBeFrozen.save()
+
+    addressInfo.daoLockedUntilEpoch = newDaoLockedUntilEpoch
+    addressInfo.save()
   }
 }
 
@@ -522,7 +525,7 @@ export function handleLpDeposit(event: LpDeposit): void {
       )
       return
     }
-    applyLpDepositDelta(addressInfo, depositAmount, event.block)
+    applyLpDepositDelta(addressInfo, depositAmount, event.block, event.address)
   }
 }
 
@@ -532,13 +535,13 @@ export function handleLpWithdraw(event: LpWithdraw): void {
   if(withdrawAmount > BI_ZERO) {
     let addressInfo = mustLoadAddressInfo(withdrawAddress, event.block, 'Withdraw')
     let deltaStagedUniV2 = withdrawAmount.neg()
-    applyLpDepositDelta(addressInfo, deltaStagedUniV2, event.block)
+    applyLpDepositDelta(addressInfo, deltaStagedUniV2, event.block, event.address)
   }
 }
 
 // Apply Lp Withdraw/Deposit from account represented by AddressInfo
 // Positive deltaStagedUniV2 amount means Deposit, Negative amount means Withdraw
-function applyLpDepositDelta(addressInfo: AddressInfo, deltaStagedUniV2: BigInt, block: ethereum.Block): void {
+function applyLpDepositDelta(addressInfo: AddressInfo, deltaStagedUniV2: BigInt, block: ethereum.Block, targetPoolAddress: Address): void {
   let currentEpochSnapshot = epochSnapshotGetCurrent()
 
   currentEpochSnapshot.lpStagedUniV2Total += deltaStagedUniV2
@@ -546,9 +549,9 @@ function applyLpDepositDelta(addressInfo: AddressInfo, deltaStagedUniV2: BigInt,
   let accountStatus = addressInfoLpStatus(addressInfo, currentEpochSnapshot.epoch)
   if (accountStatus == 'fluid') {
     let meta = Meta.load('current')
-    log.error(
-      "[{}]: Got Withdraw/Deposit event on fluid status for address {} at epoch {}, lpFluidUnitlEpoch {}, currentPool {}",
-      [block.number.toString(), addressInfo.id, currentEpochSnapshot.epoch.toString(), addressInfo.lpFluidUntilEpoch.toString(), meta.lpAddress]
+    log.warning(
+      "[{}]: Got Withdraw/Deposit event on fluid status for address {} at epoch {}, lpFluidUnitlEpoch {}, currentPool {}, targetPool {}",
+      [block.number.toString(), addressInfo.id, currentEpochSnapshot.epoch.toString(), addressInfo.lpFluidUntilEpoch.toString(), meta.lpAddress, targetPoolAddress.toHexString()]
     )
   } else {
     currentEpochSnapshot.lpStagedUniV2Frozen += deltaStagedUniV2
@@ -625,7 +628,8 @@ function applyLpBondingDeltas(addressInfo: AddressInfo, deltaStagedUniV2: BigInt
   let fundsToBeFrozen = fundsToBeFrozenForEpoch(fluidUntilEpoch)
   fundsToBeFrozen.lpStagedUniV2FluidToFrozen += addressInfo.lpStagedUniV2
   fundsToBeFrozen.lpBondedUniV2FluidToFrozen += addressInfo.lpBondedUniV2
-  fundsToBeFrozen.lpBondedUniV2FluidToFrozen += addressInfo.lpClaimableEsd
+  fundsToBeFrozen.lpClaimableEsdFluidToFrozen += addressInfo.lpClaimableEsd
+
   fundsToBeFrozen.save()
 
   currentEpochSnapshot.save()
