@@ -285,7 +285,6 @@ export function handleDaoAdvance(event: DaoAdvance): void {
     let totalLpStaged = BigInt.fromI32(0)
     let lpContractAddress = daoContract.pool()
     let totalDaoBondedEsd = daoContract.totalBonded()
-    currentEpochSnapshot.DEBUGDaoBondedEsdTotal = totalDaoBondedEsd
     if(lpContractAddress) {
       let lpContract = DaoCallLpContract.bind(lpContractAddress)
       totalLpBonded = lpContract.totalBonded()
@@ -686,7 +685,6 @@ function epochSnapshotGetCurrent(): EpochSnapshot {
     epochSnapshot.oraclePrice = BigInt.fromI32(0)
     epochSnapshot.bootstrappingAt = false
 
-    epochSnapshot.DEBUGDaoBondedEsdTotal = BigInt.fromI32(0)
     epochSnapshot.daoBondedEsdTotal = BigInt.fromI32(0)
     epochSnapshot.daoBondedEsdsTotal = BigInt.fromI32(0)
     epochSnapshot.daoBondedEsdsFrozen = BigInt.fromI32(0)
@@ -728,7 +726,6 @@ function epochSnapshotCopyCurrent(currentEpochSnapshot: EpochSnapshot): void {
   epochSnapshot.oraclePrice = currentEpochSnapshot.oraclePrice
   epochSnapshot.bootstrappingAt = currentEpochSnapshot.bootstrappingAt
 
-  epochSnapshot.DEBUGDaoBondedEsdTotal = currentEpochSnapshot.DEBUGDaoBondedEsdTotal
   epochSnapshot.daoBondedEsdTotal = currentEpochSnapshot.daoBondedEsdTotal
   epochSnapshot.daoBondedEsdsTotal = currentEpochSnapshot.daoBondedEsdsTotal
   epochSnapshot.daoBondedEsdsFrozen = currentEpochSnapshot.daoBondedEsdsFrozen
