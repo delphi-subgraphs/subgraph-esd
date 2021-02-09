@@ -445,30 +445,32 @@ export function handleDaoVote(event: DaoVote): void {
   let candidatePeriod = daoContract.periodFor(voteCandidate)
   let newDaoLockedUntilEpoch = candidateStart + candidatePeriod
 
-  if(newDaoLockedUntilEpoch > addressInfo.daoLockedUntilEpoch) {
-    let daoStatus = addressInfoDaoStatus(addressInfo, currentEpochSnapshot.epoch)
-    if(daoStatus == 'locked') {
+  let daoStatus = addressInfoDaoStatus(addressInfo, currentEpochSnapshot.epoch)
+  if(daoStatus == 'locked') {
+    if(newDaoLockedUntilEpoch > addressInfo.daoLockedUntilEpoch) {
       // Funds were locked until a previous Epoch
       let oldFundsToBeFrozen = fundsToBeFrozenForEpoch(addressInfo.daoLockedUntilEpoch)
       oldFundsToBeFrozen.daoStagedEsdLockedToFrozen -= addressInfo.daoStagedEsd
       oldFundsToBeFrozen.daoBondedEsdsLockedToFrozen -= addressInfo.daoBondedEsds
       oldFundsToBeFrozen.save()
-    } else if(daoStatus == 'fluid') {
-      // Funds were fluid now they are locked
-      let oldFundsToBeFrozen = fundsToBeFrozenForEpoch(addressInfo.daoFluidUntilEpoch)
-      oldFundsToBeFrozen.daoStagedEsdFluidToFrozen -= addressInfo.daoStagedEsd
-      oldFundsToBeFrozen.daoBondedEsdsFluidToFrozen -= addressInfo.daoBondedEsds
-      oldFundsToBeFrozen.save()
     }
+  } else if(daoStatus == 'fluid') {
+    // Funds were fluid now they are locked
+    let oldFundsToBeFrozen = fundsToBeFrozenForEpoch(addressInfo.daoFluidUntilEpoch)
+    oldFundsToBeFrozen.daoStagedEsdFluidToFrozen -= addressInfo.daoStagedEsd
+    oldFundsToBeFrozen.daoBondedEsdsFluidToFrozen -= addressInfo.daoBondedEsds
+    oldFundsToBeFrozen.save()
+  }
 
-    let newFundsToBeFrozen = fundsToBeFrozenForEpoch(newDaoLockedUntilEpoch)
-    newFundsToBeFrozen.daoStagedEsdLockedToFrozen += addressInfo.daoStagedEsd
-    newFundsToBeFrozen.daoBondedEsdsLockedToFrozen += addressInfo.daoBondedEsds
-    newFundsToBeFrozen.save()
-
+  if(newDaoLockedUntilEpoch > addressInfo.daoLockedUntilEpoch) {
     addressInfo.daoLockedUntilEpoch = newDaoLockedUntilEpoch
     addressInfo.save()
   }
+
+  let newFundsToBeFrozen = fundsToBeFrozenForEpoch(addressInfo.daoLockedUntilEpoch)
+  newFundsToBeFrozen.daoStagedEsdLockedToFrozen += addressInfo.daoStagedEsd
+  newFundsToBeFrozen.daoBondedEsdsLockedToFrozen += addressInfo.daoBondedEsds
+  newFundsToBeFrozen.save()
 }
 
 // Since proposal 17: 0xda7780d1bcccf32ac50da8956f9acead5a507576
