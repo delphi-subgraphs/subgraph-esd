@@ -594,6 +594,7 @@ function applyLpBondingDeltas(addressInfo: AddressInfo, deltaStagedUniV2: BigInt
     // Account funds stay fluid
     currentEpochSnapshot.lpStagedUniV2Fluid += deltaStagedUniV2
     currentEpochSnapshot.lpBondedUniV2Fluid -= deltaStagedUniV2
+    currentEpochSnapshot.lpClaimableEsdFluid += newClaimableEsd
 
     // Account funds will freeze on a later epoch now
     let previousFundsToBeFrozen = fundsToBeFrozenForEpoch(addressInfo.lpFluidUntilEpoch)
