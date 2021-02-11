@@ -258,7 +258,7 @@ export function handleDaoAdvance(event: DaoAdvance): void {
 
   // Fill in balances for history entities
   // Values at the end of the epoch (begining of the next one) are taken
-  // TODO(Fede): maybe we can have "current" entities here too
+  // TODO(elfedy): maybe we can have "current" entities here too
   // (or a singleton entity that has all aggregates), but lets
   // leave these for now to benchmark the aggregate values
   if(epoch > BigInt.fromI32(1)) {
@@ -341,6 +341,7 @@ function applyDaoDepositDelta(addressInfo: AddressInfo, deltaStagedEsd: BigInt, 
 
     let fundsToBeFrozen = fundsToBeFrozenForEpoch(addressInfo.daoLockedUntilEpoch)
     fundsToBeFrozen.daoStagedEsdLockedToFrozen += deltaStagedEsd
+    fundsToBeFrozen.save()
   } else {
     currentEpochSnapshot.daoStagedEsdFrozen += deltaStagedEsd
   }
