@@ -199,6 +199,7 @@ export function handleDollarTransfer(event: DollarTransfer): void {
     toAddressInfo.save()
   }
 
+  // Deduct from lp transfer amounts from rewarded
   if(transferFrom == ADDRESS_ESD_LP1 ||
     transferFrom == ADDRESS_ESD_LP2 ||
     transferFrom == ADDRESS_ESD_LP3 ||
@@ -208,6 +209,7 @@ export function handleDollarTransfer(event: DollarTransfer): void {
     currentEpoch.save()
   }
 
+  // Add to lp transfer amounts to rewarded
   if(transferTo == ADDRESS_ESD_LP1 ||
     transferTo == ADDRESS_ESD_LP2 ||
     transferTo == ADDRESS_ESD_LP3 ||
