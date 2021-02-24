@@ -10,10 +10,8 @@ type EpochSnapshot @entity {
   block: BigInt!
 
   expiredCoupons: BigInt!
-  outstandingCoupons: BigInt!
   couponsExpiration: BigInt!
   oraclePrice: BigInt!
-  bootstrappingAt: Boolean!
 
   daoBondedEsdTotal: BigInt!
   daoBondedEsdsTotal: BigInt!
