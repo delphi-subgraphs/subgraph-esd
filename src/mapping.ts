@@ -97,7 +97,6 @@ let DAO_COUPON_EXPIRATION = BigInt.fromI32(90)
 /*
  *** UPGRADEABLE
  */
-
 export function handleUpgradeableUpgraded(event: UpgradeableUpgraded): void {
   let meta = Meta.load("current")
   if (meta == null) {
@@ -111,10 +110,7 @@ export function handleUpgradeableUpgraded(event: UpgradeableUpgraded): void {
   let currentPool = daoContract.pool()
 
   if(currentPool.toHexString() != meta.lpAddress) {
-    log.info(
-      "[{}]: Creating new pool contract for address [{}]",
-      [event.block.number.toString(), currentPool.toHexString()]
-    )
+    log.info( "[{}]: Creating new pool contract for address [{}]",[event.block.number.toString(), currentPool.toHexString()])
     meta.lpAddress = currentPool.toHexString()
     meta.save()
     TemplateLpContract.create(currentPool)
@@ -133,17 +129,9 @@ export function handleUniswapV2PairTransfer(event: UniswapV2PairTransfer): void 
   if(transferFrom.toHexString() != ADDRESS_ZERO_HEX && transferAmount > BI_ZERO) {
     let fromAddressInfo = mustLoadAddressInfo(transferFrom, event.block, 'Transfer')
     if (fromAddressInfo.uniV2Balance < transferAmount) {
-      log.error(
-        '[{}]: Got transfer from address {} with insuficient funds value is {} balance is {}',
-        [
-          event.block.number.toString(),
-          transferFrom.toHexString(),
-          transferAmount.toString(),
-          fromAddressInfo.uniV2Balance.toString()
-        ]
-      )
+      log.error('[{}]: Got transfer from address {} with insuficient funds value is {} balance is {}',
+        [event.block.number.toString(),transferFrom.toHexString(),transferAmount.toString(),fromAddressInfo.uniV2Balance.toString() ])
     }
-
     fromAddressInfo.uniV2Balance -= transferAmount
     fromAddressInfo.save()
   }
@@ -154,7 +142,6 @@ export function handleUniswapV2PairTransfer(event: UniswapV2PairTransfer): void 
     if (toAddressInfo == null) {
       toAddressInfo = addressInfoNew(transferTo.toHexString())
     }
-
     toAddressInfo.uniV2Balance += transferAmount
     toAddressInfo.save()
   }
@@ -163,7 +150,6 @@ export function handleUniswapV2PairTransfer(event: UniswapV2PairTransfer): void 
 /*
  *** DOLLAR
  */
-
 export function handleDollarTransfer(event: DollarTransfer): void {
   let transferFrom = event.params.from
   let transferTo = event.params.to
@@ -173,17 +159,10 @@ export function handleDollarTransfer(event: DollarTransfer): void {
   if(transferFrom.toHexString() != ADDRESS_ZERO_HEX && transferAmount > BI_ZERO) {
     let fromAddressInfo = mustLoadAddressInfo(transferFrom, event.block, 'Transfer')
     if (fromAddressInfo.esdBalance < transferAmount) {
-      log.error(
-        '[{}]: Got transfer from address {} with insuficient funds value is {} balance is {}',
-        [
-          event.block.number.toString(),
-          transferFrom.toHexString(),
-          transferAmount.toString(),
-          fromAddressInfo.esdBalance.toString()
-        ]
+      log.error('[{}]: Got transfer from address {} with insuficient funds value is {} balance is {}',
+        [event.block.number.toString(),transferFrom.toHexString(),transferAmount.toString(),fromAddressInfo.esdBalance.toString()]
       )
     }
-
     fromAddressInfo.esdBalance -= transferAmount
     fromAddressInfo.save()
   }
@@ -200,20 +179,14 @@ export function handleDollarTransfer(event: DollarTransfer): void {
   }
 
   // Deduct from lp transfer amounts from rewarded
-  if(transferFrom == ADDRESS_ESD_LP1 ||
-    transferFrom == ADDRESS_ESD_LP2 ||
-    transferFrom == ADDRESS_ESD_LP3 ||
-    transferFrom == ADDRESS_ESD_LP4) {
+  if(transferFrom == ADDRESS_ESD_LP1 || transferFrom == ADDRESS_ESD_LP2 || transferFrom == ADDRESS_ESD_LP3 || transferFrom == ADDRESS_ESD_LP4) {
     let currentEpoch = epochSnapshotGetCurrent()
     currentEpoch.lpRewardedEsdTotal -= transferAmount
     currentEpoch.save()
   }
 
   // Add to lp transfer amounts to rewarded
-  if(transferTo == ADDRESS_ESD_LP1 ||
-    transferTo == ADDRESS_ESD_LP2 ||
-    transferTo == ADDRESS_ESD_LP3 ||
-    transferTo == ADDRESS_ESD_LP4) {
+  if(transferTo == ADDRESS_ESD_LP1 || transferTo == ADDRESS_ESD_LP2 || transferTo == ADDRESS_ESD_LP3 || transferTo == ADDRESS_ESD_LP4) {
     let currentEpoch = epochSnapshotGetCurrent()
     currentEpoch.lpRewardedEsdTotal += transferAmount
     currentEpoch.save()
@@ -225,7 +198,6 @@ export function handleDollarTransfer(event: DollarTransfer): void {
 /*
  *** DAO
  */
-
 export function handleDaoAdvance(event: DaoAdvance): void {
   // save current values into previous epoch snapshot
   let currentEpochSnapshot = epochSnapshotGetCurrent()
@@ -258,6 +230,9 @@ export function handleDaoAdvance(event: DaoAdvance): void {
   currentEpochSnapshot.lpClaimableEsdFluid -= fundsToBeFrozen.lpClaimableEsdFluidToFrozen
   currentEpochSnapshot.lpClaimableEsdFrozen += fundsToBeFrozen.lpClaimableEsdFluidToFrozen
 
+  let daoContract = DaoContract.bind(ADDRESS_ESD_DAO)
+  currentEpochSnapshot.expiredCoupons = daoContract.couponsExpiration(epoch)
+
   // Fill in balances for history entities
   // Values at the end of the epoch (begining of the next one) are taken
   // TODO(elfedy): maybe we can have "current" entities here too
@@ -280,7 +255,6 @@ export function handleDaoAdvance(event: DaoAdvance): void {
     esdSupplyHistory.save()
 
     // lpTokenHistory
-    let daoContract = DaoContract.bind(ADDRESS_ESD_DAO)
     let uniswapContract = DaoCallUniswapV2PairContract.bind(ADDRESS_UNISWAP_PAIR)
     let totalLpUniV2 = uniswapContract.totalSupply()
     let totalLpBonded = BigInt.fromI32(0)
@@ -310,10 +284,7 @@ export function handleDaoDeposit(event: DaoDeposit): void {
   if(depositAmount > BI_ZERO) {
     let addressInfo = mustLoadAddressInfo(depositAddress, event.block, 'Deposit')
     if(addressInfo == null) {
-      log.error(
-        '[{}]: Got deposit from previously non existing address {}',
-        [event.block.number.toString(), depositAddress.toHexString()]
-      )
+      log.error('[{}]: Got deposit from previously non existing address {}',[event.block.number.toString(), depositAddress.toHexString()])
       return
     }
     applyDaoDepositDelta(addressInfo, depositAmount, event.block)
@@ -349,12 +320,9 @@ function applyDaoDepositDelta(addressInfo: AddressInfo, deltaStagedEsd: BigInt, 
   }
 
   if (accountStatus == "fluid") {
-    log.error(
-      "[{}]: Got Withdraw/Deposit event on fluid status for address {} at epoch {}",
-      [block.number.toString(), addressInfo.id, currentEpochSnapshot.epoch.toString()]
-    )
+    log.error( "[{}]: Got Withdraw/Deposit event on fluid status for address {} at epoch {}",
+     [block.number.toString(), addressInfo.id, currentEpochSnapshot.epoch.toString()])
   }
-
   currentEpochSnapshot.save()
   addressInfo.save()
 }
@@ -400,17 +368,17 @@ function applyDaoBondingDeltas(addressInfo: AddressInfo, deltaStagedEsd: BigInt,
     previousFundsToBeFrozen.daoStagedEsdFluidToFrozen -= addressInfo.daoStagedEsd
     previousFundsToBeFrozen.daoBondedEsdsFluidToFrozen -= addressInfo.daoBondedEsds
     previousFundsToBeFrozen.save()
-  } else if(previousAccountStatus == "frozen") {
+  } 
+  else if(previousAccountStatus == "frozen") {
     // Account funds move from frozen to fluid
     currentEpochSnapshot.daoStagedEsdFrozen -= addressInfo.daoStagedEsd
     currentEpochSnapshot.daoBondedEsdsFrozen -= addressInfo.daoBondedEsds
     currentEpochSnapshot.daoStagedEsdFluid += (addressInfo.daoStagedEsd + deltaStagedEsd)
     currentEpochSnapshot.daoBondedEsdsFluid += (addressInfo.daoBondedEsds + deltaBondedEsds)
-  } else {
-    log.error(
-      "[{}]: Got Bond/Unbond event on locked status for address {} at epoch {}", 
-      [block.number.toString(), addressInfo.id, currentEpoch.toString()]
-    )
+  } 
+  else {
+    log.error("[{}]: Got Bond/Unbond event on locked status for address {} at epoch {}", 
+      [block.number.toString(), addressInfo.id, currentEpoch.toString()])
   }
 
   // Staged/Bonded status: Delta staged goes from bonded esd to staged esd
@@ -441,8 +409,7 @@ export function handleDaoVote(event: DaoVote): void {
 
   // NOTE(elfedy): Event does not have the lockup period, so need to call
   // the contract to calculate. Could just use lockedUntil but it was
-  // added late in the contract so not sure how that behaves on early
-  // blocks
+  // added late in the contract so not sure how that behaves on early blocks
   let daoContract = DaoContract.bind(event.address)
   let candidateStart = daoContract.startFor(voteCandidate)
   let candidatePeriod = daoContract.periodFor(voteCandidate)
@@ -467,10 +434,8 @@ export function handleDaoVote(event: DaoVote): void {
   }
 
   if(daoStatus == 'fluid') {
-    log.warning(
-      "[{}]: Got Vote event on fluid status for address {} at epoch {}, daoFluidUnitlEpoch {}, daoLockedUntilEpoch {}",
-      [event.block.number.toString(), addressInfo.id, currentEpochSnapshot.epoch.toString(), addressInfo.daoFluidUntilEpoch.toString(), addressInfo.daoLockedUntilEpoch.toString()]
-    )
+    log.warning("[{}]: Got Vote event on fluid status for address {} at epoch {}, daoFluidUnitlEpoch {}, daoLockedUntilEpoch {}",
+      [event.block.number.toString(), addressInfo.id, currentEpochSnapshot.epoch.toString(), addressInfo.daoFluidUntilEpoch.toString(), addressInfo.daoLockedUntilEpoch.toString()])
   }
 
   if(newDaoLockedUntilEpoch > addressInfo.daoLockedUntilEpoch) {
@@ -526,7 +491,6 @@ export function handleDaoCouponExpiration(event: DaoCouponExpiration): void {
 /*
  *** ORACLE POOL
  */
-
 export function handleLpDeposit(event: LpDeposit): void {
   let depositAmount = event.params.value
   let depositAddress = event.params.account
@@ -699,10 +663,8 @@ function epochSnapshotGetCurrent(): EpochSnapshot {
     epochSnapshot.block = BigInt.fromI32(10722554)
 
     epochSnapshot.expiredCoupons = BigInt.fromI32(0)
-    epochSnapshot.outstandingCoupons = BigInt.fromI32(0)
     epochSnapshot.couponsExpiration = BigInt.fromI32(0)
     epochSnapshot.oraclePrice = BigInt.fromI32(0)
-    epochSnapshot.bootstrappingAt = false
 
     epochSnapshot.daoBondedEsdTotal = BigInt.fromI32(0)
     epochSnapshot.daoBondedEsdsTotal = BigInt.fromI32(0)
@@ -740,10 +702,8 @@ function epochSnapshotCopyCurrent(currentEpochSnapshot: EpochSnapshot): void {
   epochSnapshot.block = currentEpochSnapshot.block
 
   epochSnapshot.expiredCoupons = currentEpochSnapshot.expiredCoupons
-  epochSnapshot.outstandingCoupons = currentEpochSnapshot.outstandingCoupons
   epochSnapshot.couponsExpiration = currentEpochSnapshot.couponsExpiration
   epochSnapshot.oraclePrice = currentEpochSnapshot.oraclePrice
-  epochSnapshot.bootstrappingAt = currentEpochSnapshot.bootstrappingAt
 
   epochSnapshot.daoBondedEsdTotal = currentEpochSnapshot.daoBondedEsdTotal
   epochSnapshot.daoBondedEsdsTotal = currentEpochSnapshot.daoBondedEsdsTotal
@@ -830,10 +790,7 @@ function addressInfoLpStatus(addressInfo: AddressInfo, epoch: BigInt): string {
 function mustLoadAddressInfo(address: Address, block: ethereum.Block, operation: String): AddressInfo {
   let addressInfo = AddressInfo.load(address.toHexString())
   if(addressInfo == null) {
-    log.error(
-      '[{}]: Got {} from previously non existing address {}',
-      [block.number.toString(), operation, address.toHexString()]
-    )
+    log.error('[{}]: Got {} from previously non existing address {}',[block.number.toString(), operation, address.toHexString()])
   }
   return <AddressInfo>addressInfo
 }
