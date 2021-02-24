@@ -9,7 +9,7 @@ type EpochSnapshot @entity {
   timestamp: BigInt!
   block: BigInt!
 
-  expiredCoupons: BigInt!
+  expiringCoupons: BigInt!
   couponsExpiration: BigInt!
   oraclePrice: BigInt!
 

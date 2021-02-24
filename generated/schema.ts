@@ -109,22 +109,13 @@ export class EpochSnapshot extends Entity {
     this.set("block", Value.fromBigInt(value));
   }
 
-  get expiredCoupons(): BigInt {
-    let value = this.get("expiredCoupons");
+  get expiringCoupons(): BigInt {
+    let value = this.get("expiringCoupons");
     return value.toBigInt();
   }
 
-  set expiredCoupons(value: BigInt) {
-    this.set("expiredCoupons", Value.fromBigInt(value));
-  }
-
-  get outstandingCoupons(): BigInt {
-    let value = this.get("outstandingCoupons");
-    return value.toBigInt();
-  }
-
-  set outstandingCoupons(value: BigInt) {
-    this.set("outstandingCoupons", Value.fromBigInt(value));
+  set expiringCoupons(value: BigInt) {
+    this.set("expiringCoupons", Value.fromBigInt(value));
   }
 
   get couponsExpiration(): BigInt {
@@ -143,24 +134,6 @@ export class EpochSnapshot extends Entity {
 
   set oraclePrice(value: BigInt) {
     this.set("oraclePrice", Value.fromBigInt(value));
-  }
-
-  get bootstrappingAt(): boolean {
-    let value = this.get("bootstrappingAt");
-    return value.toBoolean();
-  }
-
-  set bootstrappingAt(value: boolean) {
-    this.set("bootstrappingAt", Value.fromBoolean(value));
-  }
-
-  get DEBUGDaoBondedEsdTotal(): BigInt {
-    let value = this.get("DEBUGDaoBondedEsdTotal");
-    return value.toBigInt();
-  }
-
-  set DEBUGDaoBondedEsdTotal(value: BigInt) {
-    this.set("DEBUGDaoBondedEsdTotal", Value.fromBigInt(value));
   }
 
   get daoBondedEsdTotal(): BigInt {

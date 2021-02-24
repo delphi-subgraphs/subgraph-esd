@@ -231,7 +231,7 @@ export function handleDaoAdvance(event: DaoAdvance): void {
   currentEpochSnapshot.lpClaimableEsdFrozen += fundsToBeFrozen.lpClaimableEsdFluidToFrozen
 
   let daoContract = DaoContract.bind(ADDRESS_ESD_DAO)
-  currentEpochSnapshot.expiredCoupons = daoContract.couponsExpiration(epoch)
+  currentEpochSnapshot.expiringCoupons = daoContract.expiringCoupons(epoch)
 
   // Fill in balances for history entities
   // Values at the end of the epoch (begining of the next one) are taken
@@ -662,7 +662,7 @@ function epochSnapshotGetCurrent(): EpochSnapshot {
     epochSnapshot.timestamp = BigInt.fromI32(0)
     epochSnapshot.block = BigInt.fromI32(10722554)
 
-    epochSnapshot.expiredCoupons = BigInt.fromI32(0)
+    epochSnapshot.expiringCoupons = BigInt.fromI32(0)
     epochSnapshot.couponsExpiration = BigInt.fromI32(0)
     epochSnapshot.oraclePrice = BigInt.fromI32(0)
 
@@ -701,7 +701,7 @@ function epochSnapshotCopyCurrent(currentEpochSnapshot: EpochSnapshot): void {
   epochSnapshot.timestamp = currentEpochSnapshot.timestamp
   epochSnapshot.block = currentEpochSnapshot.block
 
-  epochSnapshot.expiredCoupons = currentEpochSnapshot.expiredCoupons
+  epochSnapshot.expiringCoupons = currentEpochSnapshot.expiringCoupons
   epochSnapshot.couponsExpiration = currentEpochSnapshot.couponsExpiration
   epochSnapshot.oraclePrice = currentEpochSnapshot.oraclePrice
 

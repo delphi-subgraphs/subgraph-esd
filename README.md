@@ -5,7 +5,7 @@ The dollar protocol is operated by a DAO that governs and operates the supply of
 
 **Bonding** - Bonding is the act of locking your ESD token in the Empty Set Dollar DAO / LP tokens in the pool contract, to gain benefits such as voting or rewards.
 
-**Staging** - Tokens must pass through a staging phase when entering the DAO. When the tokens are staged they will be available to bond. This state is used to control the deposit and withdrawal of tokens. 
+**Staging** - Tokens must pass through a staging phase when entering the DAO or the pool contract. When the tokens are staged they will be available to bond. This state is used to control the deposit and withdrawal of tokens. 
 
 **Epoch** - Dollar's DAO splits time into distinct `epochs` of roughly 8 hours (28,800 Seconds) to simplify logic around governance, supply regulation, and flash loan resistance. Users are allowed to interact with the DAO by bonding or unbonding ESD or LP just once per epoch.
 
@@ -23,7 +23,7 @@ Below are some of the queries supported by the Subgraph. The queries show most o
 The following query returns the protocol state for a particular `epoch`. The returned paramters are briefly described below - 
 
  - epoch : The epoch number 
- - expiredCoupons : Number of coupons that got expired during the current Epoch
+ - expiringCoupons : Number of coupons that expire during the current Epoch
  - couponsExpiration : Epoch when the Coupons emitted during the target epoch will expire.
  - oraclePrice : The price taken from the Uniswap price oracle at the start of the epoch.
  - daoBondedEsdTotal : ESD balance bonded at the end of the epoch 
