@@ -12,7 +12,7 @@ The dollar protocol is operated by a DAO that governs and operates the supply of
 **Coupons** - Coupons are offered by the protocol as an incentive to voluntarily burn ESD. The amount of ESD burned multiplied by the premium are issued in place of the burned ESD via coupons. When the money supply grows again the coupon holder may redeem their coupon for ESD at a one-to-one ratio. 
 
 ## Networks and Performance
-This subgraph can be found on The Graph Hosted Service at [https://thegraph.com/explorer/subgraph/cryptowhaler/ufmsvxjvx](https://thegraph.com/explorer/subgraph/cryptowhaler/ufmsvxjvx). All monetary values are given in 10^18 
+This subgraph can be found on The Graph Hosted Service at [https://thegraph.com/explorer/subgraph/delphi-subgraphs/empty-set-dollar](https://thegraph.com/explorer/subgraph/delphi-subgraphs/empty-set-dollar). All monetary values are given in 10^18 
 
 
 You can also run this subgraph locally, if you wish. Instructions for that can be found in The Graph Documentation.
