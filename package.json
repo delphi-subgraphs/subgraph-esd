@@ -1,13 +1,13 @@
 {
-  "name": "yaesg",
+  "name": "ayaesg",
   "license": "UNLICENSED",
   "scripts": {
     "codegen": "graph codegen",
     "build": "graph build",
-    "deploy": "graph deploy --node https://api.thegraph.com/deploy/ --ipfs https://api.thegraph.com/ipfs/ elfedy/yaesg",
-    "create-local": "graph create --node http://localhost:8020/ elfedy/yaesg",
-    "remove-local": "graph remove --node http://localhost:8020/ elfedy/yaesg",
-    "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 elfedy/yaesg"
+    "deploy": "graph deploy --node https://api.thegraph.com/deploy/ --ipfs https://api.thegraph.com/ipfs/ elfedy/ayaesg",
+    "create-local": "graph create --node http://localhost:8020/ elfedy/ayaesg",
+    "remove-local": "graph remove --node http://localhost:8020/ elfedy/ayaesg",
+    "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://ipfs.network.thegraph.com elfedy/ayaesg"
   },
   "dependencies": {
     "@graphprotocol/graph-cli": "0.18.0",

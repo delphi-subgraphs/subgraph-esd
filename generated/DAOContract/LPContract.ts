@@ -162,9 +162,9 @@ export class Withdraw__Params {
   }
 }
 
-export class LPContract extends ethereum.SmartContract {
-  static bind(address: Address): LPContract {
-    return new LPContract("LPContract", address);
+export class LpContract extends ethereum.SmartContract {
+  static bind(address: Address): LpContract {
+    return new LpContract("LpContract", address);
   }
 
   balanceOfBonded(account: Address): BigInt {

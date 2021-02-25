@@ -12,7 +12,7 @@ import {
   BigDecimal
 } from "@graphprotocol/graph-ts";
 
-export class Epoch extends Entity {
+export class Meta extends Entity {
   constructor(id: string) {
     super();
     this.set("id", Value.fromString(id));
@@ -20,17 +20,17 @@ export class Epoch extends Entity {
 
   save(): void {
     let id = this.get("id");
-    assert(id !== null, "Cannot save Epoch entity without an ID");
+    assert(id !== null, "Cannot save Meta entity without an ID");
     assert(
       id.kind == ValueKind.STRING,
-      "Cannot save Epoch entity with non-string ID. " +
+      "Cannot save Meta entity with non-string ID. " +
         'Considering using .toHex() to convert the "id" to a string.'
     );
-    store.set("Epoch", id.toString(), this);
+    store.set("Meta", id.toString(), this);
   }
 
-  static load(id: string): Epoch | null {
-    return store.get("Epoch", id) as Epoch | null;
+  static load(id: string): Meta | null {
+    return store.get("Meta", id) as Meta | null;
   }
 
   get id(): string {
@@ -42,335 +42,626 @@ export class Epoch extends Entity {
     this.set("id", Value.fromString(value));
   }
 
-  get startDAOTotalBonded(): BigInt | null {
-    let value = this.get("startDAOTotalBonded");
-    if (value === null) {
-      return null;
-    } else {
-      return value.toBigInt();
-    }
+  get lpAddress(): string {
+    let value = this.get("lpAddress");
+    return value.toString();
   }
 
-  set startDAOTotalBonded(value: BigInt | null) {
-    if (value === null) {
-      this.unset("startDAOTotalBonded");
-    } else {
-      this.set("startDAOTotalBonded", Value.fromBigInt(value as BigInt));
-    }
+  set lpAddress(value: string) {
+    this.set("lpAddress", Value.fromString(value));
+  }
+}
+
+export class EpochSnapshot extends Entity {
+  constructor(id: string) {
+    super();
+    this.set("id", Value.fromString(id));
   }
 
-  get startDAOTotalStaged(): BigInt | null {
-    let value = this.get("startDAOTotalStaged");
-    if (value === null) {
-      return null;
-    } else {
-      return value.toBigInt();
-    }
+  save(): void {
+    let id = this.get("id");
+    assert(id !== null, "Cannot save EpochSnapshot entity without an ID");
+    assert(
+      id.kind == ValueKind.STRING,
+      "Cannot save EpochSnapshot entity with non-string ID. " +
+        'Considering using .toHex() to convert the "id" to a string.'
+    );
+    store.set("EpochSnapshot", id.toString(), this);
   }
 
-  set startDAOTotalStaged(value: BigInt | null) {
-    if (value === null) {
-      this.unset("startDAOTotalStaged");
-    } else {
-      this.set("startDAOTotalStaged", Value.fromBigInt(value as BigInt));
-    }
+  static load(id: string): EpochSnapshot | null {
+    return store.get("EpochSnapshot", id) as EpochSnapshot | null;
   }
 
-  get startTotalDebt(): BigInt | null {
-    let value = this.get("startTotalDebt");
-    if (value === null) {
-      return null;
-    } else {
-      return value.toBigInt();
-    }
+  get id(): string {
+    let value = this.get("id");
+    return value.toString();
   }
 
-  set startTotalDebt(value: BigInt | null) {
-    if (value === null) {
-      this.unset("startTotalDebt");
-    } else {
-      this.set("startTotalDebt", Value.fromBigInt(value as BigInt));
-    }
+  set id(value: string) {
+    this.set("id", Value.fromString(value));
   }
 
-  get startTotalRedeemable(): BigInt | null {
-    let value = this.get("startTotalRedeemable");
-    if (value === null) {
-      return null;
-    } else {
-      return value.toBigInt();
-    }
+  get epoch(): BigInt {
+    let value = this.get("epoch");
+    return value.toBigInt();
   }
 
-  set startTotalRedeemable(value: BigInt | null) {
-    if (value === null) {
-      this.unset("startTotalRedeemable");
-    } else {
-      this.set("startTotalRedeemable", Value.fromBigInt(value as BigInt));
-    }
+  set epoch(value: BigInt) {
+    this.set("epoch", Value.fromBigInt(value));
   }
 
-  get startTotalCoupons(): BigInt | null {
-    let value = this.get("startTotalCoupons");
-    if (value === null) {
-      return null;
-    } else {
-      return value.toBigInt();
-    }
+  get timestamp(): BigInt {
+    let value = this.get("timestamp");
+    return value.toBigInt();
   }
 
-  set startTotalCoupons(value: BigInt | null) {
-    if (value === null) {
-      this.unset("startTotalCoupons");
-    } else {
-      this.set("startTotalCoupons", Value.fromBigInt(value as BigInt));
-    }
+  set timestamp(value: BigInt) {
+    this.set("timestamp", Value.fromBigInt(value));
   }
 
-  get startTotalNet(): BigInt | null {
-    let value = this.get("startTotalNet");
-    if (value === null) {
-      return null;
-    } else {
-      return value.toBigInt();
-    }
+  get block(): BigInt {
+    let value = this.get("block");
+    return value.toBigInt();
   }
 
-  set startTotalNet(value: BigInt | null) {
-    if (value === null) {
-      this.unset("startTotalNet");
-    } else {
-      this.set("startTotalNet", Value.fromBigInt(value as BigInt));
-    }
+  set block(value: BigInt) {
+    this.set("block", Value.fromBigInt(value));
   }
 
-  get startTotalLPESD(): BigInt | null {
-    let value = this.get("startTotalLPESD");
-    if (value === null) {
-      return null;
-    } else {
-      return value.toBigInt();
-    }
+  get expiringCoupons(): BigInt {
+    let value = this.get("expiringCoupons");
+    return value.toBigInt();
   }
 
-  set startTotalLPESD(value: BigInt | null) {
-    if (value === null) {
-      this.unset("startTotalLPESD");
-    } else {
-      this.set("startTotalLPESD", Value.fromBigInt(value as BigInt));
-    }
+  set expiringCoupons(value: BigInt) {
+    this.set("expiringCoupons", Value.fromBigInt(value));
   }
 
-  get startTotalLPTokens(): BigInt | null {
-    let value = this.get("startTotalLPTokens");
-    if (value === null) {
-      return null;
-    } else {
-      return value.toBigInt();
-    }
-  }
-
-  set startTotalLPTokens(value: BigInt | null) {
-    if (value === null) {
-      this.unset("startTotalLPTokens");
-    } else {
-      this.set("startTotalLPTokens", Value.fromBigInt(value as BigInt));
-    }
-  }
-
-  get startLPTotalBondedTokens(): BigInt | null {
-    let value = this.get("startLPTotalBondedTokens");
-    if (value === null) {
-      return null;
-    } else {
-      return value.toBigInt();
-    }
-  }
-
-  set startLPTotalBondedTokens(value: BigInt | null) {
-    if (value === null) {
-      this.unset("startLPTotalBondedTokens");
-    } else {
-      this.set("startLPTotalBondedTokens", Value.fromBigInt(value as BigInt));
-    }
-  }
-
-  get startLPTotalStagedTokens(): BigInt | null {
-    let value = this.get("startLPTotalStagedTokens");
-    if (value === null) {
-      return null;
-    } else {
-      return value.toBigInt();
-    }
-  }
-
-  set startLPTotalStagedTokens(value: BigInt | null) {
-    if (value === null) {
-      this.unset("startLPTotalStagedTokens");
-    } else {
-      this.set("startLPTotalStagedTokens", Value.fromBigInt(value as BigInt));
-    }
-  }
-
-  get startLPTotalBondedESD(): BigInt | null {
-    let value = this.get("startLPTotalBondedESD");
-    if (value === null) {
-      return null;
-    } else {
-      return value.toBigInt();
-    }
-  }
-
-  set startLPTotalBondedESD(value: BigInt | null) {
-    if (value === null) {
-      this.unset("startLPTotalBondedESD");
-    } else {
-      this.set("startLPTotalBondedESD", Value.fromBigInt(value as BigInt));
-    }
-  }
-
-  get startLPTotalStagedESD(): BigInt | null {
-    let value = this.get("startLPTotalStagedESD");
-    if (value === null) {
-      return null;
-    } else {
-      return value.toBigInt();
-    }
-  }
-
-  set startLPTotalStagedESD(value: BigInt | null) {
-    if (value === null) {
-      this.unset("startLPTotalStagedESD");
-    } else {
-      this.set("startLPTotalStagedESD", Value.fromBigInt(value as BigInt));
-    }
-  }
-
-  get startTimestamp(): BigInt | null {
-    let value = this.get("startTimestamp");
-    if (value === null) {
-      return null;
-    } else {
-      return value.toBigInt();
-    }
-  }
-
-  set startTimestamp(value: BigInt | null) {
-    if (value === null) {
-      this.unset("startTimestamp");
-    } else {
-      this.set("startTimestamp", Value.fromBigInt(value as BigInt));
-    }
-  }
-
-  get startBlock(): BigInt | null {
-    let value = this.get("startBlock");
-    if (value === null) {
-      return null;
-    } else {
-      return value.toBigInt();
-    }
-  }
-
-  set startBlock(value: BigInt | null) {
-    if (value === null) {
-      this.unset("startBlock");
-    } else {
-      this.set("startBlock", Value.fromBigInt(value as BigInt));
-    }
-  }
-
-  get expiredCoupons(): BigInt | null {
-    let value = this.get("expiredCoupons");
-    if (value === null) {
-      return null;
-    } else {
-      return value.toBigInt();
-    }
-  }
-
-  set expiredCoupons(value: BigInt | null) {
-    if (value === null) {
-      this.unset("expiredCoupons");
-    } else {
-      this.set("expiredCoupons", Value.fromBigInt(value as BigInt));
-    }
-  }
-
-  get outstandingCoupons(): BigInt | null {
-    let value = this.get("outstandingCoupons");
-    if (value === null) {
-      return null;
-    } else {
-      return value.toBigInt();
-    }
-  }
-
-  set outstandingCoupons(value: BigInt | null) {
-    if (value === null) {
-      this.unset("outstandingCoupons");
-    } else {
-      this.set("outstandingCoupons", Value.fromBigInt(value as BigInt));
-    }
-  }
-
-  get couponsExpiration(): BigInt | null {
+  get couponsExpiration(): BigInt {
     let value = this.get("couponsExpiration");
-    if (value === null) {
-      return null;
-    } else {
-      return value.toBigInt();
-    }
+    return value.toBigInt();
   }
 
-  set couponsExpiration(value: BigInt | null) {
-    if (value === null) {
-      this.unset("couponsExpiration");
-    } else {
-      this.set("couponsExpiration", Value.fromBigInt(value as BigInt));
-    }
+  set couponsExpiration(value: BigInt) {
+    this.set("couponsExpiration", Value.fromBigInt(value));
   }
 
-  get oraclePrice(): BigInt | null {
+  get oraclePrice(): BigInt {
     let value = this.get("oraclePrice");
-    if (value === null) {
-      return null;
-    } else {
-      return value.toBigInt();
-    }
+    return value.toBigInt();
   }
 
-  set oraclePrice(value: BigInt | null) {
-    if (value === null) {
-      this.unset("oraclePrice");
-    } else {
-      this.set("oraclePrice", Value.fromBigInt(value as BigInt));
-    }
+  set oraclePrice(value: BigInt) {
+    this.set("oraclePrice", Value.fromBigInt(value));
   }
 
-  get deltaSupply(): BigInt | null {
-    let value = this.get("deltaSupply");
-    if (value === null) {
-      return null;
-    } else {
-      return value.toBigInt();
-    }
+  get daoBondedEsdTotal(): BigInt {
+    let value = this.get("daoBondedEsdTotal");
+    return value.toBigInt();
   }
 
-  set deltaSupply(value: BigInt | null) {
-    if (value === null) {
-      this.unset("deltaSupply");
-    } else {
-      this.set("deltaSupply", Value.fromBigInt(value as BigInt));
-    }
+  set daoBondedEsdTotal(value: BigInt) {
+    this.set("daoBondedEsdTotal", Value.fromBigInt(value));
   }
 
-  get bootstrappingAt(): boolean {
-    let value = this.get("bootstrappingAt");
-    return value.toBoolean();
+  get daoBondedEsdsTotal(): BigInt {
+    let value = this.get("daoBondedEsdsTotal");
+    return value.toBigInt();
   }
 
-  set bootstrappingAt(value: boolean) {
-    this.set("bootstrappingAt", Value.fromBoolean(value));
+  set daoBondedEsdsTotal(value: BigInt) {
+    this.set("daoBondedEsdsTotal", Value.fromBigInt(value));
+  }
+
+  get daoBondedEsdsFrozen(): BigInt {
+    let value = this.get("daoBondedEsdsFrozen");
+    return value.toBigInt();
+  }
+
+  set daoBondedEsdsFrozen(value: BigInt) {
+    this.set("daoBondedEsdsFrozen", Value.fromBigInt(value));
+  }
+
+  get daoBondedEsdsFluid(): BigInt {
+    let value = this.get("daoBondedEsdsFluid");
+    return value.toBigInt();
+  }
+
+  set daoBondedEsdsFluid(value: BigInt) {
+    this.set("daoBondedEsdsFluid", Value.fromBigInt(value));
+  }
+
+  get daoBondedEsdsLocked(): BigInt {
+    let value = this.get("daoBondedEsdsLocked");
+    return value.toBigInt();
+  }
+
+  set daoBondedEsdsLocked(value: BigInt) {
+    this.set("daoBondedEsdsLocked", Value.fromBigInt(value));
+  }
+
+  get daoStagedEsdTotal(): BigInt {
+    let value = this.get("daoStagedEsdTotal");
+    return value.toBigInt();
+  }
+
+  set daoStagedEsdTotal(value: BigInt) {
+    this.set("daoStagedEsdTotal", Value.fromBigInt(value));
+  }
+
+  get daoStagedEsdFrozen(): BigInt {
+    let value = this.get("daoStagedEsdFrozen");
+    return value.toBigInt();
+  }
+
+  set daoStagedEsdFrozen(value: BigInt) {
+    this.set("daoStagedEsdFrozen", Value.fromBigInt(value));
+  }
+
+  get daoStagedEsdFluid(): BigInt {
+    let value = this.get("daoStagedEsdFluid");
+    return value.toBigInt();
+  }
+
+  set daoStagedEsdFluid(value: BigInt) {
+    this.set("daoStagedEsdFluid", Value.fromBigInt(value));
+  }
+
+  get daoStagedEsdLocked(): BigInt {
+    let value = this.get("daoStagedEsdLocked");
+    return value.toBigInt();
+  }
+
+  set daoStagedEsdLocked(value: BigInt) {
+    this.set("daoStagedEsdLocked", Value.fromBigInt(value));
+  }
+
+  get lpBondedUniV2Total(): BigInt {
+    let value = this.get("lpBondedUniV2Total");
+    return value.toBigInt();
+  }
+
+  set lpBondedUniV2Total(value: BigInt) {
+    this.set("lpBondedUniV2Total", Value.fromBigInt(value));
+  }
+
+  get lpBondedUniV2Frozen(): BigInt {
+    let value = this.get("lpBondedUniV2Frozen");
+    return value.toBigInt();
+  }
+
+  set lpBondedUniV2Frozen(value: BigInt) {
+    this.set("lpBondedUniV2Frozen", Value.fromBigInt(value));
+  }
+
+  get lpBondedUniV2Fluid(): BigInt {
+    let value = this.get("lpBondedUniV2Fluid");
+    return value.toBigInt();
+  }
+
+  set lpBondedUniV2Fluid(value: BigInt) {
+    this.set("lpBondedUniV2Fluid", Value.fromBigInt(value));
+  }
+
+  get lpStagedUniV2Total(): BigInt {
+    let value = this.get("lpStagedUniV2Total");
+    return value.toBigInt();
+  }
+
+  set lpStagedUniV2Total(value: BigInt) {
+    this.set("lpStagedUniV2Total", Value.fromBigInt(value));
+  }
+
+  get lpStagedUniV2Frozen(): BigInt {
+    let value = this.get("lpStagedUniV2Frozen");
+    return value.toBigInt();
+  }
+
+  set lpStagedUniV2Frozen(value: BigInt) {
+    this.set("lpStagedUniV2Frozen", Value.fromBigInt(value));
+  }
+
+  get lpStagedUniV2Fluid(): BigInt {
+    let value = this.get("lpStagedUniV2Fluid");
+    return value.toBigInt();
+  }
+
+  set lpStagedUniV2Fluid(value: BigInt) {
+    this.set("lpStagedUniV2Fluid", Value.fromBigInt(value));
+  }
+
+  get lpClaimableEsdTotal(): BigInt {
+    let value = this.get("lpClaimableEsdTotal");
+    return value.toBigInt();
+  }
+
+  set lpClaimableEsdTotal(value: BigInt) {
+    this.set("lpClaimableEsdTotal", Value.fromBigInt(value));
+  }
+
+  get lpClaimableEsdFrozen(): BigInt {
+    let value = this.get("lpClaimableEsdFrozen");
+    return value.toBigInt();
+  }
+
+  set lpClaimableEsdFrozen(value: BigInt) {
+    this.set("lpClaimableEsdFrozen", Value.fromBigInt(value));
+  }
+
+  get lpClaimableEsdFluid(): BigInt {
+    let value = this.get("lpClaimableEsdFluid");
+    return value.toBigInt();
+  }
+
+  set lpClaimableEsdFluid(value: BigInt) {
+    this.set("lpClaimableEsdFluid", Value.fromBigInt(value));
+  }
+
+  get lpRewardedEsdTotal(): BigInt {
+    let value = this.get("lpRewardedEsdTotal");
+    return value.toBigInt();
+  }
+
+  set lpRewardedEsdTotal(value: BigInt) {
+    this.set("lpRewardedEsdTotal", Value.fromBigInt(value));
+  }
+}
+
+export class FundsToBeFrozen extends Entity {
+  constructor(id: string) {
+    super();
+    this.set("id", Value.fromString(id));
+  }
+
+  save(): void {
+    let id = this.get("id");
+    assert(id !== null, "Cannot save FundsToBeFrozen entity without an ID");
+    assert(
+      id.kind == ValueKind.STRING,
+      "Cannot save FundsToBeFrozen entity with non-string ID. " +
+        'Considering using .toHex() to convert the "id" to a string.'
+    );
+    store.set("FundsToBeFrozen", id.toString(), this);
+  }
+
+  static load(id: string): FundsToBeFrozen | null {
+    return store.get("FundsToBeFrozen", id) as FundsToBeFrozen | null;
+  }
+
+  get id(): string {
+    let value = this.get("id");
+    return value.toString();
+  }
+
+  set id(value: string) {
+    this.set("id", Value.fromString(value));
+  }
+
+  get epoch(): BigInt {
+    let value = this.get("epoch");
+    return value.toBigInt();
+  }
+
+  set epoch(value: BigInt) {
+    this.set("epoch", Value.fromBigInt(value));
+  }
+
+  get daoStagedEsdFluidToFrozen(): BigInt {
+    let value = this.get("daoStagedEsdFluidToFrozen");
+    return value.toBigInt();
+  }
+
+  set daoStagedEsdFluidToFrozen(value: BigInt) {
+    this.set("daoStagedEsdFluidToFrozen", Value.fromBigInt(value));
+  }
+
+  get daoStagedEsdLockedToFrozen(): BigInt {
+    let value = this.get("daoStagedEsdLockedToFrozen");
+    return value.toBigInt();
+  }
+
+  set daoStagedEsdLockedToFrozen(value: BigInt) {
+    this.set("daoStagedEsdLockedToFrozen", Value.fromBigInt(value));
+  }
+
+  get daoBondedEsdsFluidToFrozen(): BigInt {
+    let value = this.get("daoBondedEsdsFluidToFrozen");
+    return value.toBigInt();
+  }
+
+  set daoBondedEsdsFluidToFrozen(value: BigInt) {
+    this.set("daoBondedEsdsFluidToFrozen", Value.fromBigInt(value));
+  }
+
+  get daoBondedEsdsLockedToFrozen(): BigInt {
+    let value = this.get("daoBondedEsdsLockedToFrozen");
+    return value.toBigInt();
+  }
+
+  set daoBondedEsdsLockedToFrozen(value: BigInt) {
+    this.set("daoBondedEsdsLockedToFrozen", Value.fromBigInt(value));
+  }
+
+  get lpStagedUniV2FluidToFrozen(): BigInt {
+    let value = this.get("lpStagedUniV2FluidToFrozen");
+    return value.toBigInt();
+  }
+
+  set lpStagedUniV2FluidToFrozen(value: BigInt) {
+    this.set("lpStagedUniV2FluidToFrozen", Value.fromBigInt(value));
+  }
+
+  get lpBondedUniV2FluidToFrozen(): BigInt {
+    let value = this.get("lpBondedUniV2FluidToFrozen");
+    return value.toBigInt();
+  }
+
+  set lpBondedUniV2FluidToFrozen(value: BigInt) {
+    this.set("lpBondedUniV2FluidToFrozen", Value.fromBigInt(value));
+  }
+
+  get lpClaimableEsdFluidToFrozen(): BigInt {
+    let value = this.get("lpClaimableEsdFluidToFrozen");
+    return value.toBigInt();
+  }
+
+  set lpClaimableEsdFluidToFrozen(value: BigInt) {
+    this.set("lpClaimableEsdFluidToFrozen", Value.fromBigInt(value));
+  }
+}
+
+export class EsdSupplyHistory extends Entity {
+  constructor(id: string) {
+    super();
+    this.set("id", Value.fromString(id));
+  }
+
+  save(): void {
+    let id = this.get("id");
+    assert(id !== null, "Cannot save EsdSupplyHistory entity without an ID");
+    assert(
+      id.kind == ValueKind.STRING,
+      "Cannot save EsdSupplyHistory entity with non-string ID. " +
+        'Considering using .toHex() to convert the "id" to a string.'
+    );
+    store.set("EsdSupplyHistory", id.toString(), this);
+  }
+
+  static load(id: string): EsdSupplyHistory | null {
+    return store.get("EsdSupplyHistory", id) as EsdSupplyHistory | null;
+  }
+
+  get id(): string {
+    let value = this.get("id");
+    return value.toString();
+  }
+
+  set id(value: string) {
+    this.set("id", Value.fromString(value));
+  }
+
+  get epoch(): BigInt {
+    let value = this.get("epoch");
+    return value.toBigInt();
+  }
+
+  set epoch(value: BigInt) {
+    this.set("epoch", Value.fromBigInt(value));
+  }
+
+  get daoLockedTotal(): BigInt {
+    let value = this.get("daoLockedTotal");
+    return value.toBigInt();
+  }
+
+  set daoLockedTotal(value: BigInt) {
+    this.set("daoLockedTotal", Value.fromBigInt(value));
+  }
+
+  get lpLockedTotal(): BigInt {
+    let value = this.get("lpLockedTotal");
+    return value.toBigInt();
+  }
+
+  set lpLockedTotal(value: BigInt) {
+    this.set("lpLockedTotal", Value.fromBigInt(value));
+  }
+
+  get totalSupply(): BigInt {
+    let value = this.get("totalSupply");
+    return value.toBigInt();
+  }
+
+  set totalSupply(value: BigInt) {
+    this.set("totalSupply", Value.fromBigInt(value));
+  }
+}
+
+export class LpUniV2TokenHistory extends Entity {
+  constructor(id: string) {
+    super();
+    this.set("id", Value.fromString(id));
+  }
+
+  save(): void {
+    let id = this.get("id");
+    assert(id !== null, "Cannot save LpUniV2TokenHistory entity without an ID");
+    assert(
+      id.kind == ValueKind.STRING,
+      "Cannot save LpUniV2TokenHistory entity with non-string ID. " +
+        'Considering using .toHex() to convert the "id" to a string.'
+    );
+    store.set("LpUniV2TokenHistory", id.toString(), this);
+  }
+
+  static load(id: string): LpUniV2TokenHistory | null {
+    return store.get("LpUniV2TokenHistory", id) as LpUniV2TokenHistory | null;
+  }
+
+  get id(): string {
+    let value = this.get("id");
+    return value.toString();
+  }
+
+  set id(value: string) {
+    this.set("id", Value.fromString(value));
+  }
+
+  get epoch(): BigInt {
+    let value = this.get("epoch");
+    return value.toBigInt();
+  }
+
+  set epoch(value: BigInt) {
+    this.set("epoch", Value.fromBigInt(value));
+  }
+
+  get totalStaged(): BigInt {
+    let value = this.get("totalStaged");
+    return value.toBigInt();
+  }
+
+  set totalStaged(value: BigInt) {
+    this.set("totalStaged", Value.fromBigInt(value));
+  }
+
+  get totalBonded(): BigInt {
+    let value = this.get("totalBonded");
+    return value.toBigInt();
+  }
+
+  set totalBonded(value: BigInt) {
+    this.set("totalBonded", Value.fromBigInt(value));
+  }
+
+  get totalSupply(): BigInt {
+    let value = this.get("totalSupply");
+    return value.toBigInt();
+  }
+
+  set totalSupply(value: BigInt) {
+    this.set("totalSupply", Value.fromBigInt(value));
+  }
+}
+
+export class AddressInfo extends Entity {
+  constructor(id: string) {
+    super();
+    this.set("id", Value.fromString(id));
+  }
+
+  save(): void {
+    let id = this.get("id");
+    assert(id !== null, "Cannot save AddressInfo entity without an ID");
+    assert(
+      id.kind == ValueKind.STRING,
+      "Cannot save AddressInfo entity with non-string ID. " +
+        'Considering using .toHex() to convert the "id" to a string.'
+    );
+    store.set("AddressInfo", id.toString(), this);
+  }
+
+  static load(id: string): AddressInfo | null {
+    return store.get("AddressInfo", id) as AddressInfo | null;
+  }
+
+  get id(): string {
+    let value = this.get("id");
+    return value.toString();
+  }
+
+  set id(value: string) {
+    this.set("id", Value.fromString(value));
+  }
+
+  get esdBalance(): BigInt {
+    let value = this.get("esdBalance");
+    return value.toBigInt();
+  }
+
+  set esdBalance(value: BigInt) {
+    this.set("esdBalance", Value.fromBigInt(value));
+  }
+
+  get uniV2Balance(): BigInt {
+    let value = this.get("uniV2Balance");
+    return value.toBigInt();
+  }
+
+  set uniV2Balance(value: BigInt) {
+    this.set("uniV2Balance", Value.fromBigInt(value));
+  }
+
+  get daoBondedEsds(): BigInt {
+    let value = this.get("daoBondedEsds");
+    return value.toBigInt();
+  }
+
+  set daoBondedEsds(value: BigInt) {
+    this.set("daoBondedEsds", Value.fromBigInt(value));
+  }
+
+  get daoStagedEsd(): BigInt {
+    let value = this.get("daoStagedEsd");
+    return value.toBigInt();
+  }
+
+  set daoStagedEsd(value: BigInt) {
+    this.set("daoStagedEsd", Value.fromBigInt(value));
+  }
+
+  get daoLockedUntilEpoch(): BigInt {
+    let value = this.get("daoLockedUntilEpoch");
+    return value.toBigInt();
+  }
+
+  set daoLockedUntilEpoch(value: BigInt) {
+    this.set("daoLockedUntilEpoch", Value.fromBigInt(value));
+  }
+
+  get daoFluidUntilEpoch(): BigInt {
+    let value = this.get("daoFluidUntilEpoch");
+    return value.toBigInt();
+  }
+
+  set daoFluidUntilEpoch(value: BigInt) {
+    this.set("daoFluidUntilEpoch", Value.fromBigInt(value));
+  }
+
+  get lpBondedUniV2(): BigInt {
+    let value = this.get("lpBondedUniV2");
+    return value.toBigInt();
+  }
+
+  set lpBondedUniV2(value: BigInt) {
+    this.set("lpBondedUniV2", Value.fromBigInt(value));
+  }
+
+  get lpStagedUniV2(): BigInt {
+    let value = this.get("lpStagedUniV2");
+    return value.toBigInt();
+  }
+
+  set lpStagedUniV2(value: BigInt) {
+    this.set("lpStagedUniV2", Value.fromBigInt(value));
+  }
+
+  get lpClaimableEsd(): BigInt {
+    let value = this.get("lpClaimableEsd");
+    return value.toBigInt();
+  }
+
+  set lpClaimableEsd(value: BigInt) {
+    this.set("lpClaimableEsd", Value.fromBigInt(value));
+  }
+
+  get lpFluidUntilEpoch(): BigInt {
+    let value = this.get("lpFluidUntilEpoch");
+    return value.toBigInt();
+  }
+
+  set lpFluidUntilEpoch(value: BigInt) {
+    this.set("lpFluidUntilEpoch", Value.fromBigInt(value));
   }
 }

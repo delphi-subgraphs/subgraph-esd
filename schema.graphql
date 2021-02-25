@@ -1,29 +1,85 @@
-type Epoch @entity {
+type Meta @entity {
   id: ID!
-  startDAOTotalBonded: BigInt
-  startDAOTotalStaged: BigInt
-  startTotalDebt: BigInt
-  startTotalRedeemable: BigInt
-  startTotalCoupons: BigInt
-  startTotalNet: BigInt
-
-  startTotalLPESD: BigInt
-  startTotalLPTokens: BigInt
-
-  startLPTotalBondedTokens: BigInt
-  startLPTotalStagedTokens: BigInt
-  startLPTotalBondedESD: BigInt
-  startLPTotalStagedESD: BigInt
-
-  startTimestamp: BigInt
-  startBlock: BigInt
-
-  expiredCoupons: BigInt
-  outstandingCoupons: BigInt
-  couponsExpiration: BigInt
-
-  oraclePrice: BigInt
-  deltaSupply: BigInt
-
-  bootstrappingAt: Boolean
+  lpAddress: String!
 }
+
+type EpochSnapshot @entity {
+  id: ID!
+  epoch: BigInt!
+  timestamp: BigInt!
+  block: BigInt!
+
+  expiringCoupons: BigInt!
+  couponsExpiration: BigInt!
+  oraclePrice: BigInt!
+
+  daoBondedEsdTotal: BigInt!
+  daoBondedEsdsTotal: BigInt!
+  daoBondedEsdsFrozen: BigInt!
+  daoBondedEsdsFluid: BigInt!
+  daoBondedEsdsLocked: BigInt!
+
+  daoStagedEsdTotal: BigInt!
+  daoStagedEsdFrozen: BigInt!
+  daoStagedEsdFluid: BigInt!
+  daoStagedEsdLocked: BigInt!
+
+  lpBondedUniV2Total: BigInt!
+  lpBondedUniV2Frozen: BigInt!
+  lpBondedUniV2Fluid: BigInt!
+
+  lpStagedUniV2Total: BigInt!
+  lpStagedUniV2Frozen: BigInt!
+  lpStagedUniV2Fluid: BigInt!
+
+  lpClaimableEsdTotal: BigInt!
+  lpClaimableEsdFrozen: BigInt!
+  lpClaimableEsdFluid: BigInt!
+
+  lpRewardedEsdTotal: BigInt!
+}
+
+type FundsToBeFrozen @entity {
+  id: ID!
+  epoch: BigInt!
+  daoStagedEsdFluidToFrozen: BigInt!
+  daoStagedEsdLockedToFrozen: BigInt!
+  daoBondedEsdsFluidToFrozen: BigInt!
+  daoBondedEsdsLockedToFrozen: BigInt!
+  lpStagedUniV2FluidToFrozen: BigInt!
+  lpBondedUniV2FluidToFrozen: BigInt!
+  lpClaimableEsdFluidToFrozen: BigInt!
+}
+
+type EsdSupplyHistory @entity {
+  id: ID!
+  epoch: BigInt!
+  daoLockedTotal: BigInt!
+  lpLockedTotal: BigInt!
+  totalSupply: BigInt!
+}
+
+type LpUniV2TokenHistory @entity {
+  id: ID!
+  epoch: BigInt!
+  totalStaged: BigInt!
+  totalBonded: BigInt!
+  totalSupply: BigInt!
+}
+
+type AddressInfo @entity {
+  id: ID!
+  esdBalance: BigInt!
+  uniV2Balance: BigInt!
+
+  daoBondedEsds: BigInt!
+  daoStagedEsd: BigInt!
+  daoLockedUntilEpoch: BigInt!
+  daoFluidUntilEpoch: BigInt!
+
+  lpBondedUniV2: BigInt!
+  lpStagedUniV2: BigInt!
+  lpClaimableEsd: BigInt!
+  lpFluidUntilEpoch: BigInt!
+}
+

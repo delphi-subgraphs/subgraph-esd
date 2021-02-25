@@ -1,48 +1,151 @@
 specVersion: 0.0.2
+description: ESD Subgraph
+repository: https://github.com/delphi-subgraphs/subgraph-esd
 schema:
   file: ./schema.graphql
 dataSources:
   - kind: ethereum/contract
-    name: Contract
+    name: UpgradeableContract
     network: mainnet
     source:
       address: "0x443D2f2755DB5942601fa062Cc248aAA153313D3"
-      abi: Contract
+      abi: UpgradeableContract
       startBlock: 10722554
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.4
       language: wasm/assemblyscript
       entities:
-        - Advance
-        - CouponExpiration
-        - CouponPurchase
-        - CouponRedemption
-        - SupplyDecrease
-        - SupplyIncrease
-        - SupplyNeutral
+        - Meta
       abis:
-        - name: Contract
-          file: ./abis/Contract.json
-        - name: LPContract
-          file: ./abis/LPContract.json
+        - name: UpgradeableContract
+          file: ./abis/UpgradeableContract.json
+        - name: DaoContract
+          file: ./abis/DaoContract.json
+      eventHandlers:
+        - event: Upgraded(indexed address)
+          handler: handleUpgradeableUpgraded
+      file: ./src/mapping.ts
+  - kind: ethereum/contract
+    name: UniswapV2PairContract
+    network: mainnet
+    source:
+      address: "0x88ff79eb2bc5850f27315415da8685282c7610f9"
+      abi: UniswapV2PairContract
+      startBlock: 10722554
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.4
+      language: wasm/assemblyscript
+      file: ./src/mapping.ts
+      entities:
+        - EpochSnapshot
+        - AddressInfo
+      abis:
+        - name: UniswapV2PairContract
+          file: ./abis/UniswapV2PairContract.json
+      eventHandlers:
+        - event: Transfer(indexed address,indexed address,uint256)
+          handler: handleUniswapV2PairTransfer
+  - kind: ethereum/contract
+    name: DollarContract
+    network: mainnet
+    source:
+      address: "0x36F3FD68E7325a35EB768F1AedaAe9EA0689d723"
+      abi: DollarContract
+      startBlock: 10722554
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.4
+      language: wasm/assemblyscript
+      entities:
+        - AddressInfo
+        - EpochSnapshot
+      abis:
         - name: DollarContract
           file: ./abis/DollarContract.json
+      eventHandlers:
+        - event: Transfer(indexed address,indexed address,uint256)
+          handler: handleDollarTransfer
+      file: ./src/mapping.ts
+  - kind: ethereum/contract
+    name: DaoContract
+    network: mainnet
+    source:
+      address: "0x443D2f2755DB5942601fa062Cc248aAA153313D3"
+      abi: DaoContract
+      startBlock: 10722554
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.4
+      language: wasm/assemblyscript
+      entities:
+        - AddressInfo
+        - EpochSnapshot
+        - FundsToBeFrozen
+        - EsdSupplyHistory
+        - LpV2TokenHistory
+      abis:
+        - name: DaoContract
+          file: ./abis/DaoContract.json
+        - name: DollarContract
+          file: ./abis/DollarContract.json
+        - name: LpContract
+          file: ./abis/LpContract.json
         - name: UniswapV2PairContract
           file: ./abis/UniswapV2PairContract.json
       eventHandlers:
         - event: Advance(indexed uint256,uint256,uint256)
-          handler: handleAdvance
-        - event: CouponExpiration(indexed uint256,uint256,uint256,uint256,uint256)
-          handler: handleCouponExpiration
-        - event: CouponPurchase(indexed address,indexed uint256,uint256,uint256)
-          handler: handleCouponPurchase
-        - event: CouponRedemption(indexed address,indexed uint256,uint256)
-          handler: handleCouponRedemption
+          handler: handleDaoAdvance
+        - event: Deposit(indexed address,uint256)
+          handler: handleDaoDeposit
+        - event: Withdraw(indexed address,uint256)
+          handler: handleDaoWithdraw
+        - event: Bond(indexed address,uint256,uint256,uint256)
+          handler: handleDaoBond
+        - event: Unbond(indexed address,uint256,uint256,uint256)
+          handler: handleDaoUnbond
+        - event: Vote(indexed address,indexed address,uint8,uint256)
+          handler: handleDaoVote
+        - event: StabilityReward(indexed uint256,uint256,uint256)
+          handler: handleDaoStabilityReward
         - event: SupplyDecrease(indexed uint256,uint256,uint256)
-          handler: handleSupplyDecrease
+          handler: handleDaoSupplyDecrease
         - event: SupplyIncrease(indexed uint256,uint256,uint256,uint256,uint256)
-          handler: handleSupplyIncrease
+          handler: handleDaoSupplyIncrease
         - event: SupplyNeutral(indexed uint256)
-          handler: handleSupplyNeutral
+          handler: handleDaoSupplyNeutral
+        - event: CouponExpiration(indexed uint256,uint256,uint256,uint256,uint256)
+          handler: handleDaoCouponExpiration
+      file: ./src/mapping.ts
+templates:
+  - kind: ethereum/contract
+    name: LpContract
+    network: mainnet
+    source:
+      abi: LpContract
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.4
+      language: wasm/assemblyscript
+      entities:
+        - AddressInfo
+        - EpochSnapshot
+        - FundsToBeFrozen
+      abis:
+        - name: LpContract
+          file: ./abis/LpContract.json
+      eventHandlers:
+        - event: Deposit(indexed address,uint256)
+          handler: handleLpDeposit
+        - event: Withdraw(indexed address,uint256)
+          handler: handleLpWithdraw
+        - event: Provide(indexed address,uint256,uint256,uint256)
+          handler: handleLpProvide
+        - event: Bond(indexed address,uint256,uint256)
+          handler: handleLpBond
+        - event: Unbond(indexed address,uint256,uint256,uint256)
+          handler: handleLpUnbond
+        - event: Claim(indexed address,uint256)
+          handler: handleLpClaim
       file: ./src/mapping.ts
